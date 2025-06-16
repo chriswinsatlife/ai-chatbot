@@ -258,8 +258,11 @@ function PureMultimodalInput({
             event.preventDefault();
 
             if (status === 'ready' || status === 'streaming') {
+              console.log('[KEYBOARD_DEBUG] Enter pressed, submitting form. Status:', status);
               submitForm();
             } else {
+              console.log('[KEYBOARD_DEBUG] Enter blocked! Status:', status);
+              console.log('[KEYBOARD_DEBUG] This will show the error toast');
               toast.error('Please wait for the model to finish its response!');
             }
           }
@@ -272,11 +275,20 @@ function PureMultimodalInput({
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
         {status === 'submitted' ? (
-          <StopButton stop={stop} setMessages={setMessages} />
+          <StopButton
+            stop={() => {
+              console.log('[MULTIMODAL_INPUT_DEBUG] Stop button clicked, current status:', status);
+              stop();
+            }}
+            setMessages={setMessages}
+          />
         ) : (
           <SendButton
             input={input}
-            submitForm={submitForm}
+            submitForm={() => {
+              console.log('[MULTIMODAL_INPUT_DEBUG] Send button clicked, current status:', status);
+              submitForm();
+            }}
             uploadQueue={uploadQueue}
           />
         )}

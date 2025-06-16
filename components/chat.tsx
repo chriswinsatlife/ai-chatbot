@@ -97,30 +97,38 @@ export function Chat({
       return payload;
     },
     onFinish: (message) => {
-      // Added message parameter to log
       console.log(
         '[CHAT_ONFINISH_DEBUG] onFinish called. selectedChatModel:',
         selectedChatModel,
-        ', Message:',
-        message ? JSON.stringify(message) : 'N/A', // Log the message if available
       );
-      console.log('[CHAT_ONFINISH_DEBUG] Status:', status);
+      console.log(
+        '[CHAT_ONFINISH_DEBUG] Message:',
+        message ? JSON.stringify(message) : 'N/A',
+      );
+      console.log('[CHAT_ONFINISH_DEBUG] Current status:', status);
+      console.log('[CHAT_ONFINISH_DEBUG] Current isN8nProcessing:', isN8nProcessing);
+      console.log('[CHAT_ONFINISH_DEBUG] Current displayStatus:', displayStatus);
+      
       if (isN8nProcessing) {
         console.log(
           '[N8N_STATE_DEBUG] AI model finished, setting isN8nProcessing to false.',
         );
         setIsN8nProcessing(false);
       }
-      // mutate(unstable_serialize(getChatHistoryPaginationKey)); // Example, adapt if needed
+      
+      setTimeout(() => {
+        console.log('[CHAT_ONFINISH_DEBUG] Status after onFinish timeout:', status);
+        console.log('[CHAT_ONFINISH_DEBUG] isN8nProcessing after timeout:', isN8nProcessing);
+        console.log('[CHAT_ONFINISH_DEBUG] displayStatus after timeout:', displayStatus);
+      }, 100);
     },
     onError: (error) => {
-      console.error(
-        '[CHAT_ONERROR_DEBUG] onError called. selectedChatModel:',
-        selectedChatModel,
-      );
+      console.error('[CHAT_ONERROR_DEBUG] onError called. selectedChatModel:', selectedChatModel);
       console.error('[CHAT_ONERROR_DEBUG] Error details:', error);
-      console.error('[CHAT_ONERROR_DEBUG] Status:', status);
+      console.error('[CHAT_ONERROR_DEBUG] Current status:', status);
+      console.error('[CHAT_ONERROR_DEBUG] Current isN8nProcessing:', isN8nProcessing);
       toast.error('An error occurred, please try again!');
+      
       if (isN8nProcessing) {
         console.log(
           '[N8N_STATE_DEBUG] Error during AI processing, setting isN8nProcessing to false.',
@@ -200,6 +208,13 @@ export function Chat({
   };
 
   const displayStatus = isN8nProcessing ? 'submitted' : status;
+
+  useEffect(() => {
+    console.log('[STATUS_MONITOR_DEBUG] Status changed:', status);
+    console.log('[STATUS_MONITOR_DEBUG] isN8nProcessing:', isN8nProcessing);
+    console.log('[STATUS_MONITOR_DEBUG] displayStatus:', displayStatus);
+    console.log('[STATUS_MONITOR_DEBUG] selectedChatModel:', selectedChatModel);
+  }, [status, isN8nProcessing, displayStatus, selectedChatModel]);
 
   const { data: freshMessages, error: swrError } = useSWR(
     isN8nProcessing ? `/api/messages?chatId=${id}` : null,
