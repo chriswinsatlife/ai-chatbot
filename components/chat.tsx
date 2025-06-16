@@ -105,10 +105,9 @@ export function Chat({
         message ? JSON.stringify(message) : 'N/A', // Log the message if available
       );
       console.log('[CHAT_ONFINISH_DEBUG] Status:', status);
-      if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
-        // Check if it was N8N that finished
+      if (isN8nProcessing) {
         console.log(
-          '[N8N_STATE_DEBUG] N8N model finished, setting isN8nProcessing to false.',
+          '[N8N_STATE_DEBUG] AI model finished, setting isN8nProcessing to false.',
         );
         setIsN8nProcessing(false);
       }
@@ -122,9 +121,9 @@ export function Chat({
       console.error('[CHAT_ONERROR_DEBUG] Error details:', error);
       console.error('[CHAT_ONERROR_DEBUG] Status:', status);
       toast.error('An error occurred, please try again!');
-      if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
+      if (isN8nProcessing) {
         console.log(
-          '[N8N_STATE_DEBUG] Error during N8N processing, setting isN8nProcessing to false.',
+          '[N8N_STATE_DEBUG] Error during AI processing, setting isN8nProcessing to false.',
         );
         setIsN8nProcessing(false);
       }
