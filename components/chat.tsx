@@ -382,7 +382,7 @@ export function Chat({
               status={displayStatus}
               stop={() => {
                 stop();
-                if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
+                if (isN8nProcessing) {
                   setIsN8nProcessing(false);
                 }
               }}
@@ -405,7 +405,7 @@ export function Chat({
           status={displayStatus}
           stop={() => {
             stop();
-            if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
+            if (isN8nProcessing) {
               setIsN8nProcessing(false);
             }
           }}
