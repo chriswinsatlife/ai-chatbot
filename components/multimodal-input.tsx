@@ -257,10 +257,10 @@ function PureMultimodalInput({
           ) {
             event.preventDefault();
 
-            if (status !== 'ready') {
-              toast.error('Please wait for the model to finish its response!');
-            } else {
+            if (status === 'ready' || status === 'streaming') {
               submitForm();
+            } else {
+              toast.error('Please wait for the model to finish its response!');
             }
           }
         }}

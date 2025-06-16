@@ -380,8 +380,13 @@ export function Chat({
               input={input}
               setInput={setInput}
               handleSubmit={handleFormSubmit}
-              status={status}
-              stop={stop}
+              status={displayStatus}
+              stop={() => {
+                stop();
+                if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
+                  setIsN8nProcessing(false);
+                }
+              }}
               attachments={attachments}
               setAttachments={setAttachments}
               messages={messages}
@@ -398,8 +403,13 @@ export function Chat({
           input={input}
           setInput={setInput}
           handleSubmit={handleFormSubmit}
-          status={status}
-          stop={stop}
+          status={displayStatus}
+          stop={() => {
+            stop();
+            if (selectedChatModel === 'n8n-assistant' && isN8nProcessing) {
+              setIsN8nProcessing(false);
+            }
+          }}
           attachments={attachments}
           setAttachments={setAttachments}
           append={append}
