@@ -60,7 +60,6 @@ export function Chat({
   } = useChat({
     id,
     initialMessages,
-    experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
     experimental_prepareRequestBody: (body) => {
@@ -120,7 +119,11 @@ export function Chat({
         console.log('[CHAT_ONFINISH_DEBUG] Status after onFinish timeout:', status);
         console.log('[CHAT_ONFINISH_DEBUG] isN8nProcessing after timeout:', isN8nProcessing);
         console.log('[CHAT_ONFINISH_DEBUG] displayStatus after timeout:', displayStatus);
-      }, 100);
+        
+        if (status !== 'ready') {
+          console.log('[CHAT_ONFINISH_DEBUG] Status not ready after onFinish, this indicates a synchronization issue');
+        }
+      }, 200);
     },
     onError: (error) => {
       console.error('[CHAT_ONERROR_DEBUG] onError called. selectedChatModel:', selectedChatModel);
@@ -207,7 +210,14 @@ export function Chat({
     return handleSubmit(eventOrOptions, optionsBundle);
   };
 
-  const displayStatus = isN8nProcessing ? 'submitted' : status;
+  const displayStatus = (isN8nProcessing && selectedChatModel === 'n8n-assistant') ? 'submitted' : status;
+  
+  console.log('[DISPLAY_STATUS_DEBUG] displayStatus computation:', {
+    isN8nProcessing,
+    selectedChatModel,
+    status,
+    displayStatus
+  });
 
   useEffect(() => {
     console.log('[STATUS_MONITOR_DEBUG] Status changed:', status);
@@ -215,6 +225,21 @@ export function Chat({
     console.log('[STATUS_MONITOR_DEBUG] displayStatus:', displayStatus);
     console.log('[STATUS_MONITOR_DEBUG] selectedChatModel:', selectedChatModel);
   }, [status, isN8nProcessing, displayStatus, selectedChatModel]);
+
+  useEffect(() => {
+    if (status === 'submitted' && !isN8nProcessing) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.role === 'assistant') {
+        console.log('[STATUS_FALLBACK_DEBUG] Detected stuck status, forcing reset to ready');
+        setTimeout(() => {
+          if (status === 'submitted') {
+            console.log('[STATUS_FALLBACK_DEBUG] Status still stuck, calling stop() to force reset');
+            stop();
+          }
+        }, 1000);
+      }
+    }
+  }, [status, isN8nProcessing, messages, stop]);
 
   const { data: freshMessages, error: swrError } = useSWR(
     isN8nProcessing ? `/api/messages?chatId=${id}` : null,
