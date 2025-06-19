@@ -200,7 +200,9 @@ export function Chat({
     return handleSubmit(eventOrOptions, optionsBundle);
   };
 
-  const displayStatus = isN8nProcessing ? 'submitted' : status;
+  // Ensure the UI only shows the "Stop" state (submitted) while the model is actually processing.
+  // Once the SDK reports status === 'ready', we revert to the normal status so the button becomes "Send" again.
+  const displayStatus = isN8nProcessing && status !== 'ready' ? 'submitted' : status;
 
   const { data: freshMessages, error: swrError } = useSWR(
     isN8nProcessing ? `/api/messages?chatId=${id}` : null,
@@ -380,7 +382,7 @@ export function Chat({
               input={input}
               setInput={setInput}
               handleSubmit={handleFormSubmit}
-              status={status}
+              status={displayStatus}
               stop={stop}
               attachments={attachments}
               setAttachments={setAttachments}
@@ -398,7 +400,7 @@ export function Chat({
           input={input}
           setInput={setInput}
           handleSubmit={handleFormSubmit}
-          status={status}
+          status={displayStatus}
           stop={stop}
           attachments={attachments}
           setAttachments={setAttachments}
