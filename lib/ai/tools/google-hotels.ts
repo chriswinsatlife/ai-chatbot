@@ -1,5 +1,9 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { db } from '@/lib/db/queries';
+import * as schema from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 interface GoogleHotelsProps {
   userId: string;
@@ -13,13 +17,21 @@ export const googleHotels = ({
   chatId,
 }: GoogleHotelsProps) =>
   tool({
-    description: 'Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool helps find accommodations with detailed information including prices, reviews, amenities, and availability. The context parameter should contain the user\'s accommodation preferences from User_Profiles.context_hotels.',
+    description: 'Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool helps find accommodations with detailed information including prices, reviews, amenities, and availability. Automatically uses the user\'s accommodation preferences from User_Profiles.context_hotels.',
     parameters: z.object({
       query: z.string().describe('The search query for hotels or vacation rentals'),
-      context: z.string().describe('The user\'s accommodation preferences and historic information from User_Profiles.context_hotels'),
     }),
-    execute: async ({ query, context }: { query: string; context: string }) => {
+    execute: async ({ query }: { query: string }) => {
       try {
+        // Look up the user's context_hotels from the database
+        // Since context_hotels isn't in the Drizzle schema yet, we'll use a raw SQL query
+        const result = await db.execute<{ context_hotels: string | null }>(
+          `SELECT context_hotels FROM "User_Profiles" WHERE id = $1`,
+          [userId]
+        );
+        
+        const context = result.rows[0]?.context_hotels || '';
+
         // Step 1: Parse the query using OpenAI gpt-4.1-mini to extract structured search parameters
         const searchParams = await parseSearchQuery(query, context);
 
