@@ -1,0 +1,662 @@
+{
+  "name": "Superchat - Google Hotels Tool",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_hotels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.output.payload.q.replace(\", \", \" \") }}"
+            },
+            {
+              "name": "check_in_date",
+              "value": "={{ $json.output.payload.check_in_date }}"
+            },
+            {
+              "name": "check_out_date",
+              "value": "={{ $json.output.payload.check_out_date || null }}"
+            },
+            {
+              "name": "={{ $if($json.output.payload.vacation_rentals, \"vacation_rentals\", \"hotel_class\") }}",
+              "value": "={{ $if($json.output.payload.vacation_rentals, $json.output.payload.vacation_rentals, \"3,4,5\") }}"
+            },
+            {
+              "name": "property_types",
+              "value": "={{ $if($json.output.payload.vacation_rentals == true, \"1,2,3,4,5,6,7,8,10,11,21\", \"12,13,15,17,18,19,20,21,22,23,24\") }}"
+            },
+            {
+              "name": "rating",
+              "value": "8"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.output.payload.adults || 1 }}"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.output.payload.children }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "edad9034-4542-4da8-9b10-e4fb5803753c",
+      "name": "SerpAPI Google Hotels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1940,
+        340
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_maps_reviews",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "place_id",
+              "value": "ChIJAQCQ_5uLGGAR5BOZ3EcEQak"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e4d3ba1b-946e-4125-891d-b341438fc71a",
+      "name": "SerpAPI Google Places Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1540,
+        840
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "891ec766-5670-42e0-ba3c-e295e1163a5f",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -700,
+        340
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "properties",
+        "options": {}
+      },
+      "id": "49a4ea28-0182-4d62-9e81-ded4f9700609",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1740,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "ebc144d0-55ac-4ad7-8751-ac93c99c4fff",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        340
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "133d61ce-650a-41cb-8424-3540ac75fd84",
+              "name": "reviews_summary",
+              "value": "={{ $json.message.content.split(\"\\n\").map(item => \"\\t\" + item).join(\"\\n\") }}",
+              "type": "string"
+            },
+            {
+              "id": "1fecb875-2c17-4696-a5fd-084805c8775b",
+              "name": "rate_per_night_lowest_usd",
+              "value": "={{ $json.rate_per_night.extracted_lowest }}",
+              "type": "number"
+            },
+            {
+              "id": "43de540e-1bfd-4cae-b621-39ac683c155e",
+              "name": "total_rate_lowest_usd",
+              "value": "={{ $json.total_rate.extracted_lowest }}",
+              "type": "number"
+            },
+            {
+              "id": "3d0ac822-5772-403b-8642-b1998a36bbba",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "ca947ce6-bfc1-41e0-8044-6f0e633b5cc6",
+              "name": "featured_prices",
+              "value": "={{\n  $json.featured_prices.map(f => ({\n    ...f,\n    logo: undefined,\n    remarks: undefined,\n    rate_per_night: f.rate_per_night ? {\n      ...f.rate_per_night,\n      before_taxes_fees: undefined,\n      extracted_before_taxes_fees: undefined\n    } : undefined,\n    total_rate: f.total_rate ? {\n      ...f.total_rate,\n      before_taxes_fees: undefined,\n      extracted_before_taxes_fees: undefined\n    } : undefined,\n    rooms: (f.rooms || []).map(r => ({\n      ...r,\n      images: undefined,\n      rate_per_night: r.rate_per_night ? {\n        ...r.rate_per_night,\n        before_taxes_fees: undefined,\n        extracted_before_taxes_fees: undefined\n      } : undefined,\n      total_rate: r.total_rate ? {\n        ...r.total_rate,\n        before_taxes_fees: undefined,\n        extracted_before_taxes_fees: undefined\n      } : undefined\n    }))\n  }))\n}}",
+              "type": "array"
+            },
+            {
+              "id": "b0fe1406-e46d-4124-968d-cbb2535bb214",
+              "name": "prices",
+              "value": "={{\n  $json.prices.map(item =>\n    ((currentItem) => {\n      if (currentItem && typeof currentItem === 'object') {\n        /* Remove top-level fields */\n        delete currentItem.logo;\n        delete currentItem.original_rate_per_night;\n\n        /* Remove nested field: total_rate.before_taxes_fees */\n        if (currentItem.total_rate && typeof currentItem.total_rate === 'object') {\n          delete currentItem.total_rate.before_taxes_fees;\n        }\n        \n        /* Remove nested field: rate_per_night.before_taxes_fees */\n        if (currentItem.rate_per_night && typeof currentItem.rate_per_night === 'object') {\n          delete currentItem.rate_per_night.before_taxes_fees;\n        }\n\n        /* Remove nested field: total_rate.extracted_before_taxes_fees */\n        if (currentItem.total_rate && typeof currentItem.total_rate === 'object') {\n          delete currentItem.total_rate.extracted_before_taxes_fees;\n        }\n\n        /* Remove nested field: rate_per_night.extracted_before_taxes_fees */\n        if (currentItem.rate_per_night && typeof currentItem.rate_per_night === 'object') {\n          delete currentItem.rate_per_night.extracted_before_taxes_fees;\n        }\n      }\n      return currentItem; /* Return the modified item */\n    })(item)\n  )\n}}",
+              "type": "array"
+            },
+            {
+              "id": "a0df4e1f-f985-4f28-8aaa-8a0075da2dff",
+              "name": "google_maps_link",
+              "value": "=https://www.google.com/maps/search/?api=1&query={{ encodeURIComponent([$json.name, $json.address].join(\"+\")) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "except",
+        "excludeFields": "message,index,logprobs,finish_reason,rate_per_night,total_rate,deal,deal_description,nearby_places,images,serpapi_property_details_link, search_metadata, search_parameters, reviews_breakdown, other_reviews, prices, featured_prices",
+        "options": {}
+      },
+      "id": "1dd148f4-fda1-4397-b5f5-715305e2bb79",
+      "name": "Trim Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -460,
+        340
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "chatModel": "gpt-4.1-mini",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Let's summarize the reviews about this hotel or vacation rental. Be as concise as possible. Just capture the key details, red flags, and positive points. You do not need to speak in complete sentences.\n\n## Property Name:\n{{ $json.name }}\n\n## Reviews & Ratings:\n### Review Count: {{ $json.reviews }}\n### Overall Rating: {{ $json.overall_rating }} / 5\n  - Note: The average Google star rating for hotels is generally around 4.42 stars, according to a study from BrightLocal. Below 4.4 is below average. Below a 4 indicates serious issues with the property. 4.5-4.6+ is likely the bare minimum for a respectable property.\n### Rating Details: \n{{ \n  $json.ratings\n  .map(item => \n    \"\\t- \" + item.stars + \"/5 Stars: \" + item.count + \"/\" + $json.reviews + \" (\" + (item.count/$json.reviews*100).round(1) + \"%)\"\n  )\n  .join(\"\\n\")\n}}\n\n## Review Breakdown:\n{{  \n  $json.reviews_breakdown\n  .map(item => \n    \"- \" + item.description + \": \" +\n  \"\\n\\tMentions: \" + item.total_mentioned + \n  \"\\n\\tPositive: \" + item.positive + \" (\" + (item.positive/item.total_mentioned*100).round(1) + \"%)\" +\n  \"\\n\\tNegative: \" + item.negative + \" (\" + (item.negative/item.total_mentioned*100).round(1) + \"%)\" +\n  \"\\n\\tNeutral: \" + item.neutral  + \" (\" + (item.neutral/item.total_mentioned*100).round(1) + \"%)\" \n  ).join(\"\\n\")\n}}\n\n## Review_Breakdown:\n{{ \n  $json.other_reviews.slice(0, 24)\n    .map((item, index) => \n      \"Review \" + `${index+1}` + \n      \"\\n\\tDate: \" + item.user_review.date + \"\\n\\tScore: \" + item.user_review.rating.score + \"/\" + item.user_review.rating.max_score + \"\\n\\tReview: \" + item.user_review.comment + \"\\n\\tSource: \" + item.source\n    )\n  .join(\"\\n\\n\")\n}}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "97242974-642d-4886-b927-c5fb64aa3eed",
+      "name": "OpenAI - Summarize Reviews",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        -1000,
+        340
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        560
+      ],
+      "id": "c7a9fb25-13ff-40db-b4b0-5aa45ddbb96e",
+      "name": "Auto-fixing Output Parser"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"payload\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"q\": {\n          \"type\": \"string\",\n          \"description\": \"Search query, required field\"\n        },\n        \"check_in_date\": {\n          \"type\": \"string\",\n          \"format\": \"date\",\n          \"description\": \"Check-in date, required field\"\n        },\n        \"check_out_date\": {\n          \"type\": \"string\",\n          \"format\": \"date\",\n          \"description\": \"Check-out date, required field\"\n        },\n        \"vacation_rentals\": {\n          \"type\": \"boolean\",\n          \"description\": \"Indicates if vacation rentals are included. Should be omitted if searching for hotels or when the user does not explicitly ask for vacation rentals\",\n          \"default\": null\n        },\n        \"adults\": {\n          \"type\": \"number\",\n          \"default\": 2\n        },\n        \"children\": {\n          \"type\": \"number\",\n          \"default\": 0\n        }\n      },\n      \"required\": [\"q\", \"check_in_date\", \"check_out_date\"],\n      \"additionalProperties\": false\n    }\n  },\n  \"required\": [\"payload\"],\n  \"additionalProperties\": false\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -2100,
+        700
+      ],
+      "id": "3ab06217-6657-4594-ab5d-37363396a83d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            },
+            {
+              "name": "user"
+            },
+            {
+              "name": "context"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2580,
+        340
+      ],
+      "id": "fe390750-c606-4a2c-9084-ffe79184810f",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2580,
+        540
+      ],
+      "id": "775632ed-a834-4755-91e6-5ce86e6013a9",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -2380,
+        560
+      ],
+      "id": "522e312e-3bbb-40af-b64b-be79aa3689cc",
+      "name": "4.1 mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -2240,
+        700
+      ],
+      "id": "40be8720-9e5d-4536-9017-7a037028c364",
+      "name": "4.1 mini1",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.serpapi_property_details_link }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "id": "4f4bf854-f53a-4e69-8ffa-fd72eb1358b4",
+      "name": "SerpAPI Google Hotels - Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1300,
+        340
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the user query, please output the search JSON. Leave a value null or blank if it is unclear. \n\n- If the user specifies vacation rentals or Airbnb-type listings, set \"vacation_rentals\" to true, otherwise assume hotels and set it to false. \n- Do not use commas or special characters in the query string. \n- Check in and check out date is *required* (default to check in date as 1 week from today if not provided in the query).\n- Assume the client is traveling alone as one adult unless otherwise specified in the context or query.\n- The <Client_Context> is general historic information and should be used when details are not specified in the <User_Query>. \n     - For example, if the user does not specify the bed size, we may use context from <Client_Context> to fill this in. \n- The <User_Query> overrides on any conflict, since it is a current request from the user. \n     - For example, if the context says \"the client typically travels alone\" and \"always prefers hotels\" but the <User_Query> requests an Airbnb or villa which sleeps 4, the JSON you output should conform to the <User_Query>. \n- The <Current_DateTime> should be used for interpreting queries like \"next month\" or \"next week\".\n- The \"q\" is a query that would be entered into a search box on hotels.google.com. You can use anything that you would use in a regular Google Hotels search. Avoid crazy search syntax or very long q strings.\n- Output JSON according to the schema. \n</Guidelines>\n\n<Current_DateTime>\n{{ $now.toString() }}\n</Current_DateTime>\n\n<Client_Context>\n{{ $json.context }}\n</Client_Context>\n\n<User_Query>\n{{ $ifEmpty($json.query, \"weeklong hotel stay in canggu bali starting next week\") }}\n</User_Query>",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -2360,
+        340
+      ],
+      "id": "bf923d5e-9531-4030-8cb1-58bc6e2ba9d6",
+      "name": "Create Query"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00e02a19-820b-421c-9ee5-6f30ee5e0fe8",
+              "name": "response",
+              "value": "=# Accommodation Options\n{{ \n  $json.text\n  .split(\"\\n\")\n  .filter(item => item.slice(0,3) !== \"```\")\n  .join(\"\\n\")\n}}\n\n## Accommodation Preferences\n{{ $('When Executed by Another Workflow').item.json.context }}\n\n## Current Accommodation Query\n{{ $('When Executed by Another Workflow').item.json.query }}\n\n## Google Hotels Search Results Page\n{{ $('SerpAPI Google Hotels').item.json.search_metadata.prettify_html_file }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        340
+      ],
+      "id": "d454d849-6a28-4781-bef6-6cdd110940c9",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        520
+      ],
+      "id": "cdb21c79-0b3b-4b10-9a36-1432f4b8cd2e",
+      "name": "2.5 Flash Preview 05-20 - 1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Cp6RMzdRUNQWalT",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<instructions>\nPlease organize the following accommodation options in a proper markdown output. \n\n- Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-fromatted output.\n- Output markdown following the example provided. \n- Ensure to include the full booking URLs and NEVER truncate them. You only need to include 1-2 booking options per property--not all.\n- Make sure to take into account the client's accommodation preferences when ordering the hotels, which are given below.\n- You may omit options from the output if they do not fit the client's preferences. You do not have to output every single one.\n- You can and should re-arrange the order based on what you believe the client would select themselves for this particular trip.\n- Where there is a conflict between <Client_Context> and the <Current_Client_Accommodation_Search_Query>, the <Current_Client_Accommodation_Search_Query> shoul always win. This goes for inclusion/exclusion of results, sort order, etc.\n</instructions>\n\n<accommodation_options ({{ $json.data.length }}_options)>\n{{\n  [].concat(...$json.data)\n    .unique()\n    .compact()\n    .map((OptionItem, index) => {\n      function flatten(obj, prefix = '') {\n        return Object.entries(obj).reduce((acc, [k, v]) => {\n          const pre = prefix.length ? prefix + '.' : ''; \n          if (v && typeof v === 'object' && !Array.isArray(v)) {\n            Object.assign(acc, flatten(v, pre + k));\n          } else {\n            acc[pre + k] = v;\n          }\n          return acc;\n        }, {});\n      }\n\n      const flattenedOption = flatten(OptionItem); \n\n      const formattedProperties = Object.entries(flattenedOption) /* This 'const' is also typical. */\n        .map(([k, v]) => \"\\n\\t\" + `${k}: ${v}`)\n        .join(''); /* This joins the properties of a single option. */\n\n      return \"- ## Option \" + (index + 1) + \" of \" + $json.data.length + formattedProperties;\n    })\n    .join('\\n\\n')\n    .slice(0, 4200000)\n}}\n</accommodation_options>\n\n<Client_Context>\n{{ $('When Executed by Another Workflow').first().json.context }}\n</Client_Context>\n\n<Current_Client_Accommodation_Search_Query>\n{{ $ifEmpty($('When Executed by Another Workflow').item.json.query, \"weeklong hotel stay in beppu JP starting next week\") }}\n</Current_Client_Accommodation_Search_Query>\n\n<example_markdown_output>\n## The Aviator Bali\n* 🌐 [Website](https://aviatorbali.com)\n* 📍[Jalan Tegal Sari Gang Kana No.59, Tibubeneng, Kuta Utara, 80363 Canggu](https://www.google.com/maps/search/?api=1&query=name+address)\n* 🏨 ${key_amenities_summary}\n* 💬 ${reviews_summary}\n* ⭐ 9.2 - Exceptional (74 reviews) \n* [Booking.com](https://www.booking.com/full_link) - $1,826\n\t* Pay online, non-refundable\n* [Agoda](https://www.agoda.com/aviator-bali/hotel/full_link) - $2,735\n\t* Pay at check-in, free cancellation until 11:59PM on July 13, 2025\n* [Website](https://hotels.cloudbeds.com/en/reservation/full_link - $ 1,627.81\n\t* Pay online, non-refundable\n\n${3-11 similar reviews...}\n\nSee more options or change the search details on **[🏨 Google Hotels]({{ $('SerpAPI Google Hotels').item.json.search_metadata.prettify_html_file }})**.\n</example_markdown_output>",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        0,
+        340
+      ],
+      "id": "1cbd3c56-03dd-43a8-b90f-5a2be469621d",
+      "name": "Review & Format",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## To-Do\nAdd better support for amenities via search params.\n\n- [Parameters](https://serpapi.com/google-hotels-api)\n- [Hotels](https://serpapi.com/google-hotels-amenities)\n- [Vacation Rentals](https://serpapi.com/google-hotels-vacation-rentals-amenities)",
+        "height": 220
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1940,
+        0
+      ],
+      "id": "72504560-74c1-41e5-95aa-edf535abbb98",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "maxItems": 40
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        340
+      ],
+      "id": "044e201b-379a-4115-ade2-e587f48d3a9d",
+      "name": "Limit"
+    }
+  ],
+  "connections": {
+    "SerpAPI Google Hotels": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Trim Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Review & Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trim Fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Summarize Reviews": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Create Query",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Create Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create Query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 mini1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Hotels - Details": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Summarize Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Query": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Hotels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2.5 Flash Preview 05-20 - 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Review & Format",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review & Format": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Hotels - Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e22dd492-5548-49c5-9dce-3fb324772b83",
+  "meta": {
+    "instanceId": "32159554ee0146b7497a358eac8b071709b32ad6ac298a97c0f5249ac9d9fa0a"
+  },
+  "id": "ablHLyuEJI3fLCEC",
+  "tags": []
+}
