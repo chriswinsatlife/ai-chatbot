@@ -1,3 +1,4 @@
+/* eslint-env node */
 import { experimental_createMCPClient } from 'ai';
 
 // Use 'any' or define a minimal interface if specific types aren't exported/found
@@ -14,9 +15,12 @@ interface SseTransportOptions {
 const n8nUrl =
   process.env.N8N_MCP_SSE_URL ||
   'https://n8n-naps.onrender.com/mcp/a30284f9-3c68-4bc5-9d2c-b8a9c0c43ddc/sse';
-// IMPORTANT: Store sensitive tokens securely, e.g., in environment variables.
-// Avoid hardcoding them directly in the source code.
-const n8nBearerToken = process.env.N8N_MCP_BEARER_TOKEN; // Ensure this env var is set
+// Prefer the dedicated MCP token, but gracefully fall back to the standard webhook
+// secret if the MCP-specific one is not provided. This allows environments that
+// only have the webhook secret configured (e.g. Vercel preview deployments)
+// to still fetch the dynamic tool definitions from n8n.
+const n8nBearerToken =
+  process.env.N8N_MCP_BEARER_TOKEN || process.env.N8N_WEBHOOK_SECRET_KEY;
 
 let n8nClient: MCPClient | null = null;
 
@@ -27,10 +31,11 @@ async function initializeN8nClient(): Promise<MCPClient | null> {
   }
 
   if (!n8nBearerToken) {
-    console.error(
-      'N8N_MCP_BEARER_TOKEN environment variable is not set. Cannot initialize n8n MCP client.',
+    console.warn(
+      'No n8n bearer token found (N8N_MCP_BEARER_TOKEN or N8N_WEBHOOK_SECRET_KEY). ' +
+        'Attempting to initialise MCP client without Authorization header. If the server ' +
+        'requires a token, this may fail.',
     );
-    return null;
   }
 
   if (!n8nUrl) {
@@ -42,12 +47,15 @@ async function initializeN8nClient(): Promise<MCPClient | null> {
 
   try {
     console.log(`Initializing n8n MCP client for URL: ${n8nUrl}`);
+    const transportHeaders: Record<string, string> = {};
+    if (n8nBearerToken) {
+      transportHeaders.Authorization = `Bearer ${n8nBearerToken}`;
+    }
+
     const transportOptions: SseTransportOptions = {
       type: 'sse',
       url: n8nUrl,
-      headers: {
-        Authorization: `Bearer ${n8nBearerToken}`,
-      },
+      headers: Object.keys(transportHeaders).length > 0 ? transportHeaders : undefined,
     };
 
     const client: MCPClient = await experimental_createMCPClient({
