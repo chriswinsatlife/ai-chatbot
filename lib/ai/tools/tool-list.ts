@@ -1,4 +1,5 @@
 import { getWeather } from './get-weather';
+import { getHotels } from './get-hotels';
 import { createDocument } from './create-document';
 import { updateDocument } from './update-document';
 import { requestSuggestions } from './request-suggestions';
@@ -29,6 +30,7 @@ export async function assembleTools({
   // Define standard tools, passing required arguments
   const standardTools = {
     getWeather, // Assumes getWeather doesn't need specific context like userId/dataStream
+    getHotels,
     createDocument: createDocument({ userId, dataStream, chatId }),
     updateDocument: updateDocument({ userId, dataStream }),
     requestSuggestions: requestSuggestions({ userId, dataStream }),
