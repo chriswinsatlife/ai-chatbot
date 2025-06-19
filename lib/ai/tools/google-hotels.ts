@@ -1,9 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { db } from '@/lib/db/queries';
-import * as schema from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import postgres from 'postgres';
 
 interface GoogleHotelsProps {
   userId: string;
@@ -23,14 +20,20 @@ export const googleHotels = ({
     }),
     execute: async ({ query }: { query: string }) => {
       try {
-        // Look up the user's context_hotels from the database
-        // Since context_hotels isn't in the Drizzle schema yet, we'll use a raw SQL query
-        const result = await db.execute<{ context_hotels: string | null }>(
-          `SELECT context_hotels FROM "User_Profiles" WHERE id = $1`,
-          [userId]
-        );
+        // Create a postgres client to execute raw SQL
+        const sql = postgres(process.env.POSTGRES_URL!);
         
-        const context = result.rows[0]?.context_hotels || '';
+        // Look up the user's context_hotels from the database
+        const result = await sql`
+          SELECT context_hotels 
+          FROM "User_Profiles" 
+          WHERE id = ${userId}
+        `;
+        
+        const context = result[0]?.context_hotels || '';
+        
+        // Close the connection
+        await sql.end();
 
         // Step 1: Parse the query using OpenAI gpt-4.1-mini to extract structured search parameters
         const searchParams = await parseSearchQuery(query, context);
