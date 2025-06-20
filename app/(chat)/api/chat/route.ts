@@ -45,7 +45,6 @@ import {
   Part as ClientPart,
 } from '@/lib/types';
 import { tool } from 'ai';
-import { StreamingTextResponse } from 'ai';
 
 // Add type declaration at the top of the file
 declare global {
@@ -154,32 +153,6 @@ function mapIncomingMessageToUIMessage(
   };
 }
 // +++++ END HELPER FUNCTIONS +++++
-
-// Add this new function to create the stream filter
-function createToolCallFilteringStream() {
-  let hasSeenToolCall = false;
-  const textEncoder = new TextEncoder();
-
-  return new TransformStream({
-    transform(chunk, controller) {
-      const decodedChunk = new TextDecoder().decode(chunk);
-      // Example chunk: 0:" Thinking..."
-      // Tool call chunk: 2:I[{"type":"tool-call",...
-      if (decodedChunk.startsWith('2:')) {
-        hasSeenToolCall = true;
-      }
-
-      // If we see a tool call, we let it and all subsequent chunks pass through.
-      // If we haven't seen a tool call, we block the chunk (which is text filler).
-      if (hasSeenToolCall) {
-        controller.enqueue(chunk);
-      }
-    },
-    flush() {
-      // This stream doesn't need to do anything on flush.
-    },
-  });
-}
 
 export async function POST(request: Request) {
   console.log('[SERVER_API_CHAT_DEBUG] POST handler initiated.');
@@ -675,13 +648,19 @@ export async function POST(request: Request) {
                   if (!assistantId)
                     throw new Error('No assistant message found!');
 
+                  const [, assistantUIMessage] = appendResponseMessages({
+                    messages: [incomingUserMessageFromClient as UIMessage], // Cast incomingUserMessageFromClient
+                    responseMessages: event.messages,
+                  });
+
+                  // Construct DBMessage-like object from assistantUIMessage for saving
                   const assistantMessageToSave: NewDBMessage = {
                     id: assistantId,
                     chatId: chatId,
                     role: 'assistant',
-                    parts: event.toolCalls
-                      ? { tool_calls: event.toolCalls }
-                      : (event.text as any),
+                    parts: assistantUIMessage.parts,
+                    attachments:
+                      assistantUIMessage.experimental_attachments ?? [],
                     createdAt: new Date(),
                   };
                   await saveMessages({ messages: [assistantMessageToSave] });
@@ -694,13 +673,40 @@ export async function POST(request: Request) {
               }
             },
             experimental_telemetry: AISDKExporter.getSettings(),
+            onTextPart: (part: {
+              type: 'text-part';
+              textDelta: string;
+              text: string;
+            }) => {
+              // This is a new handler to intercept and control text generation.
+              // We will check if a tool is being called. If it is, we discard
+              // any text the AI tries to generate alongside it.
+              const aiState = getAIState();
+              const messages = aiState.messages || [];
+
+              // Check the last message from the AI. If it contains a tool call,
+              // we assume the text part is unwanted conversational filler and discard it.
+              const lastMessage = messages[messages.length - 1];
+              const hasToolCall =
+                lastMessage &&
+                lastMessage.role === 'assistant' &&
+                lastMessage.content.some((part: any) => part.type === 'tool-call');
+
+              if (hasToolCall) {
+                // By returning nothing here, we prevent the unwanted text
+                // from being added to the stream and shown to the user.
+                return;
+              }
+
+              // If there's no tool call, we let the text pass through as normal.
+              streamText.update(part);
+            },
           });
 
-          const filteredStream = result
-            .toAIStream()
-            .pipeThrough(createToolCallFilteringStream());
-
-          return new StreamingTextResponse(filteredStream);
+          result.consumeStream();
+          result.mergeIntoDataStream(dataStream, {
+            sendReasoning: true,
+          });
         },
         onError: () => {
           return 'Oops, an error occurred!';
