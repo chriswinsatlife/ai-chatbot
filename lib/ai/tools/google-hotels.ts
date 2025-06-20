@@ -497,7 +497,7 @@ ${formattedText
   .join('\n')}
 
 ## Accommodation Preferences
-${context || 'No context provided.'}
+${context || 'No accommodation preferences available.'}
 
 ## Current Accommodation Query
 ${query}
@@ -581,6 +581,9 @@ Sometimes the tool will return extremely long links, in which case you must shor
           userProfile.context_hotels || 'No hotel preferences available.';
         console.log(
           `[GoogleHotels] Found user profile for: ${userProfile.full_name || 'Unknown'}`,
+        );
+        console.log(
+          `[GoogleHotels] User context_hotels data: ${userContext ? `${userContext.substring(0, 200)}...` : 'NULL/EMPTY'}`,
         );
 
         // Step 2: Parse user query into structured search parameters (exact n8n logic)
