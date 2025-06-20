@@ -178,7 +178,8 @@ async function searchGoogleHotels(searchParams: any): Promise<any> {
 }
 
 async function getPropertyDetails(property: any): Promise<any> {
-  // Skip property details fetching to avoid SerpAPI errors
+  // Skip property details fetching for now to avoid SerpAPI errors
+  // Return the original property without additional details
   return property;
 }
 
@@ -444,12 +445,12 @@ ${searchResults.search_metadata?.prettify_html_file || searchResults.search_meta
 export const googleHotels = ({ userId }: { userId: string }) =>
   tool({
     description:
-      "Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool retrieves the user's saved accommodation preferences from the 'context_hotels' column in the 'User_Profiles' table in Supabase to tailor the search. It helps find accommodations with detailed information including prices, reviews, amenities, and availability.",
+      "Use this tool exclusively for finding hotels, accommodations, and vacation rentals. It searches Google Hotels via SerpAPI. This is the primary and only tool for accommodation-related queries. It retrieves the user's saved accommodation preferences from the 'context_hotels' column in the 'User_Profiles' table in Supabase to tailor the search. Do not use web search tools for this purpose.",
     parameters: z.object({
       query: z
         .string()
         .describe(
-          'The search query for hotels or vacation rentals, including location and any specific requirements',
+          'The search query for hotels or vacation rentals, including location, dates, and any specific requirements like "4-star hotel in Tokyo".',
         ),
     }),
     execute: async ({ query }: { query: string }) => {
