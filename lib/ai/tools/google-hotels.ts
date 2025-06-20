@@ -11,8 +11,9 @@ interface GoogleHotelsProps {
   userId: string;
 }
 
-// Zod schema for the payload, matching the n8n workflow's structured output.
-const searchQueryPayloadSchema = z.object({
+// Zod schema for structured output parsing, matching the n8n workflow's fields.
+// The `payload` wrapper is removed as it's not needed for our implementation.
+const searchQuerySchema = z.object({
   q: z.string().describe('Search query, required field'),
   check_in_date: z
     .string()
@@ -27,11 +28,6 @@ const searchQueryPayloadSchema = z.object({
     ),
   adults: z.number().optional().default(1).describe('Number of adults'),
   children: z.number().optional().default(0).describe('Number of children'),
-});
-
-// The final schema that wraps the payload, exactly as in the n8n workflow.
-const searchQuerySchema = z.object({
-  payload: searchQueryPayloadSchema,
 });
 
 async function getUserContext(userId: string): Promise<string | null> {
@@ -95,7 +91,6 @@ ${query}
     `[GoogleHotels] Parsing search query with gpt-4-turbo and exact n8n prompt.`,
   );
 
-  // We now expect the object to match the wrapped searchQuerySchema
   const { object: parsedResult } = await generateObject({
     model: openai('gpt-4-turbo'),
     schema: searchQuerySchema,
@@ -113,24 +108,25 @@ async function searchGoogleHotels(
     throw new Error('SERPAPI_API_KEY is not set');
   }
 
-  // Destructure from the payload object, as per the corrected schema
-  const { payload } = searchParams;
-  console.log('[GoogleHotels] Constructing search from payload:', payload);
+  console.log(
+    '[GoogleHotels] Constructing search from parameters:',
+    searchParams,
+  );
 
   // This logic is copied EXACTLY from the n8n workflow's HTTP Request node.
   const finalParams: { [key: string]: any } = {
     engine: 'google_hotels',
     api_key: process.env.SERPAPI_API_KEY,
-    q: payload.q.replace(/, /g, ' '),
-    check_in_date: payload.check_in_date,
-    check_out_date: payload.check_out_date,
-    adults: payload.adults,
-    children: payload.children,
+    q: searchParams.q.replace(/, /g, ' '),
+    check_in_date: searchParams.check_in_date,
+    check_out_date: searchParams.check_out_date,
+    adults: searchParams.adults,
+    children: searchParams.children,
     rating: '8', // Hardcoded as per the n8n workflow
   };
 
   // This is the CRITICAL conditional logic from the n8n workflow.
-  if (payload.vacation_rentals) {
+  if (searchParams.vacation_rentals) {
     console.log('[GoogleHotels] Search Type: Vacation Rentals');
     finalParams.vacation_rentals = true;
     finalParams.property_types = '1,2,3,4,5,6,7,8,10,11,21'; // VR property types
