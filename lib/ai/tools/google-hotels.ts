@@ -23,8 +23,9 @@ const searchQuerySchema = z.object({
     .describe('Check-out date in YYYY-MM-DD format, required field'),
   vacation_rentals: z
     .boolean()
+    .optional()
     .describe(
-      'Set to true for vacation rentals, false for hotels. This is a required field.',
+      'Indicates if vacation rentals are included. Should be omitted if searching for hotels or when the user does not explicitly ask for vacation rentals',
     ),
   adults: z.number().optional().default(1).describe('Number of adults'),
   children: z.number().optional().default(0).describe('Number of children'),
@@ -62,7 +63,7 @@ async function parseSearchQuery(
   // This prompt is copied EXACTLY from the working n8n workflow.
   const prompt = `Based on the user query, please output the search JSON. Leave a value null or blank if it is unclear.
 
-- If the user specifies vacation rentals or Airbnb-type listings, set "vacation_rentals" to true, otherwise assume hotels and set it to false.
+- If the user specifies vacation rentals or Airbnb-type listings, set "vacation_rentals" to true, otherwise the field should be omitted.
 - Do not use commas or special characters in the query string.
 - Check in and check out date is *required* (default to check in date as 1 week from today if not provided in the query).
 - Assume the client is traveling alone as one adult unless otherwise specified in the context or query.
@@ -88,11 +89,11 @@ ${query}
 </User_Query>`;
 
   console.log(
-    `[GoogleHotels] Parsing search query with gpt-4-turbo and exact n8n prompt.`,
+    `[GoogleHotels] Parsing search query with gpt-4.1-mini and exact n8n prompt.`,
   );
 
   const { object: parsedResult } = await generateObject({
-    model: openai('gpt-4-turbo'),
+    model: openai('gpt-4.1-mini'),
     schema: searchQuerySchema,
     prompt,
   });
