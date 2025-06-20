@@ -6,11 +6,7 @@ import {
   streamText,
   appendClientMessage,
   convertToCoreMessages,
-  createAI,
-  getMutableAIState,
-  render,
-  getAIState,
-} from 'ai/rsc';
+} from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import * as schema from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -39,74 +35,6 @@ import { assembleTools } from '@/lib/ai/tools/tool-list';
 import MemoryClient from 'mem0ai';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { z } from 'zod';
-import {
-  postRequestBodySchema,
-  Message as ClientMessage,
-  Part as ClientPart,
-} from '@/lib/types';
-import { tool } from 'ai';
-
-// Add this new function to create the stream filter
-function createToolCallFilteringStream() {
-  let hasSeenToolCall = false;
-  let textBuffer: string[] = [];
-
-  return new TransformStream({
-    transform(chunk, controller) {
-      // Decode the chunk into a string
-      const anystr = new TextDecoder().decode(chunk);
-
-      // Regex to find all structured parts (e.g., `0:"text"\n`, `2:I{"type":"tool-call",...`)
-      const regex = /(\d+):({.*?}|".*?")\n/g;
-      let match;
-
-      while ((match = regex.exec(anystr)) !== null) {
-        const type = match[1];
-        const data = match[2];
-
-        if (type === '2') {
-          // This is a tool-call part
-          try {
-            const toolCallData = JSON.parse(data);
-            if (toolCallData.type === 'tool-call') {
-              hasSeenToolCall = true;
-              // immediately send the tool call
-              controller.enqueue(chunk);
-              // and clear any buffered text, as it was just filler
-              textBuffer = [];
-              return; // Stop processing this chunk
-            }
-          } catch (e) {
-            // Not a valid JSON tool call, treat as text
-          }
-        }
-
-        if (type === '0') {
-          // This is a text part
-          textBuffer.push(anystr);
-        }
-      }
-
-      // If we haven't seen a tool call yet, we don't know if the text is filler or the final answer.
-      // So we wait. If we HAVE seen a tool call, we know any subsequent text is part of the final
-      // answer, so we can send it immediately.
-      if (hasSeenToolCall) {
-        controller.enqueue(chunk);
-      }
-    },
-    flush(controller) {
-      // If the stream is closing and we *never* saw a tool call,
-      // it means the buffered text was the final answer. Send it now.
-      if (!hasSeenToolCall && textBuffer.length > 0) {
-        textBuffer.forEach(chunkStr => {
-          controller.enqueue(new TextEncoder().encode(chunkStr));
-        });
-      }
-      // If we did see a tool call, the buffer has already been cleared,
-      // and there's nothing to flush.
-    },
-  });
-}
 
 // Add type declaration at the top of the file
 declare global {
@@ -691,7 +619,7 @@ export async function POST(request: Request) {
           console.log(
             `[SERVER_API_CHAT_DEBUG] Calling streamText for standard chat ${chatId} with Langsmith telemetry enabled.`,
           );
-          const result = await streamText({
+          const result = streamText({
             model: myProvider.languageModel(selectedChatModel),
             system: systemPrompt({ selectedChatModel }),
             messages: finalMessagesForAI, // Use the converted CoreMessage[]
@@ -699,11 +627,11 @@ export async function POST(request: Request) {
             experimental_transform: smoothStream({ chunking: 'word' }),
             experimental_generateMessageId: generateUUID,
             tools: combinedTools,
-            onFinish: async (event: any) => {
+            onFinish: async ({ response }) => {
               if (userId) {
                 try {
                   const assistantId = getTrailingMessageId({
-                    messages: event.messages.filter(
+                    messages: response.messages.filter(
                       (message) => message.role === 'assistant',
                     ),
                   });
@@ -712,7 +640,7 @@ export async function POST(request: Request) {
 
                   const [, assistantUIMessage] = appendResponseMessages({
                     messages: [incomingUserMessageFromClient as UIMessage], // Cast incomingUserMessageFromClient
-                    responseMessages: event.messages,
+                    responseMessages: response.messages,
                   });
 
                   // Construct DBMessage-like object from assistantUIMessage for saving
@@ -735,34 +663,6 @@ export async function POST(request: Request) {
               }
             },
             experimental_telemetry: AISDKExporter.getSettings(),
-            onTextPart: (part: {
-              type: 'text-part';
-              textDelta: string;
-              text: string;
-            }) => {
-              // This is a new handler to intercept and control text generation.
-              // We will check if a tool is being called. If it is, we discard
-              // any text the AI tries to generate alongside it.
-              const aiState = getAIState();
-              const messages = aiState.messages || [];
-
-              // Check the last message from the AI. If it contains a tool call,
-              // we assume the text part is unwanted conversational filler and discard it.
-              const lastMessage = messages[messages.length - 1];
-              const hasToolCall =
-                lastMessage &&
-                lastMessage.role === 'assistant' &&
-                lastMessage.content.some((part: any) => part.type === 'tool-call');
-
-              if (hasToolCall) {
-                // By returning nothing here, we prevent the unwanted text
-                // from being added to the stream and shown to the user.
-                return;
-              }
-
-              // If there's no tool call, we let the text pass through as normal.
-              streamText.update(part);
-            },
           });
 
           result.consumeStream();
