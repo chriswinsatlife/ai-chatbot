@@ -202,6 +202,11 @@ async function searchGoogleHotels(searchParams: any): Promise<any> {
   url.searchParams.append('engine', 'google_hotels');
   url.searchParams.append('api_key', SERPAPI_API_KEY as string);
 
+  // Add language and currency but NOT geographic location restriction
+  url.searchParams.append('hl', 'en'); // English language
+  url.searchParams.append('currency', 'USD'); // USD currency
+  // DO NOT add 'gl=us' as that restricts results to US locations only
+
   // Add all search parameters
   Object.entries(searchParams).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
