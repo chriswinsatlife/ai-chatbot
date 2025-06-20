@@ -107,7 +107,7 @@ ${query}
 
   try {
     const { text } = await generateText({
-      model: myProvider.languageModels['gemini-2.5-flash'],
+      model: myProvider.languageModel('gemini-2.5-flash'),
       prompt: prompt,
     });
     const jsonString = text
@@ -229,7 +229,7 @@ ${
 
   try {
     const { text: summary } = await generateText({
-      model: myProvider.languageModels['gemini-2.5-flash'],
+      model: myProvider.languageModel('gemini-2.5-flash'),
       prompt: reviewContent,
     });
     return { ...property, reviews_summary: summary };
@@ -400,7 +400,7 @@ See more options or change the search details on **[🏨 Google Hotels](${search
 
   try {
     const { text: formattedText } = await generateText({
-      model: myProvider.languageModels['gemini-2.5-flash'],
+      model: myProvider.languageModel('gemini-2.5-flash'),
       prompt: formattingPrompt,
     });
     
