@@ -76,7 +76,27 @@ ${query}
     .replace(/```json/g, '')
     .replace(/```/g, '')
     .trim();
-  return JSON.parse(jsonString);
+  const parsed = JSON.parse(jsonString);
+
+  // Add fixed parameters from n8n workflow
+  const searchParams: any = {
+    q: parsed.q.replace(/, /g, ' '),
+    check_in_date: parsed.check_in_date,
+    check_out_date: parsed.check_out_date,
+    adults: parsed.adults || 1,
+    children: parsed.children,
+    rating: '8', // from n8n
+  };
+
+  if (parsed.vacation_rentals) {
+    searchParams.vacation_rentals = true;
+    searchParams.property_types = '1,2,3,4,5,6,7,8,10,11,21'; // from n8n
+  } else {
+    searchParams.hotel_class = '3,4,5'; // from n8n
+    searchParams.property_types = '12,13,15,17,18,19,20,21,22,23,24'; // from n8n
+  }
+
+  return searchParams;
 }
 
 async function searchGoogleHotels(searchParams: any): Promise<any> {
@@ -84,6 +104,80 @@ async function searchGoogleHotels(searchParams: any): Promise<any> {
     ...searchParams,
     api_key: process.env.SERPAPI_API_KEY,
   });
+}
+
+async function getPropertyDetails(property: any): Promise<any> {
+  if (!property.serpapi_property_details_link) {
+    return property; // Return original property if no details link
+  }
+  try {
+    console.log(
+      `Fetching details for ${property.name} from ${property.serpapi_property_details_link}`,
+    );
+    const details = await getJson(
+      property.serpapi_property_details_link.split('?')[0], // Use the base URL
+      {
+        api_key: process.env.SERPAPI_API_KEY,
+        ...Object.fromEntries(
+          new URL(property.serpapi_property_details_link).searchParams,
+        ),
+      },
+    );
+    return { ...property, ...details };
+  } catch (error) {
+    console.error(`Failed to fetch details for ${property.name}:`, error);
+    return property; // Return original property on error
+  }
+}
+
+async function summarizeReviews(property: any): Promise<any> {
+  if (!property.reviews_breakdown && !property.other_reviews) {
+    return { ...property, reviews_summary: 'No review data available.' };
+  }
+
+  const reviewContent = `
+    Let's summarize the reviews about this hotel or vacation rental. Be as concise as possible. Just capture the key details, red flags, and positive points. You do not need to speak in complete sentences.
+
+    ## Property Name:
+    ${property.name}
+
+    ## Reviews & Ratings:
+    ### Review Count: ${property.reviews}
+    ### Overall Rating: ${property.overall_rating} / 5
+
+    ## Review Breakdown:
+    ${
+      property.reviews_breakdown
+        ?.map(
+          (item: any) =>
+            `- ${item.description}: Mentions: ${item.total_mentioned}, Positive: ${item.positive}, Negative: ${item.negative}, Neutral: ${item.neutral}`,
+        )
+        .join('\n') || 'Not available.'
+    }
+
+    ## Other Reviews:
+    ${
+      property.other_reviews
+        ?.slice(0, 10)
+        .map(
+          (item: any) =>
+            `- ${item.user_review.comment} (Score: ${item.user_review.rating.score}/${item.user_review.rating.max_score})`,
+        )
+        .join('\n') || 'Not available.'
+    }
+    `;
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash-preview-0514',
+    });
+    const result = await model.generateContent(reviewContent);
+    const summary = result.response.text();
+    return { ...property, reviews_summary: summary };
+  } catch (error) {
+    console.error(`Failed to summarize reviews for ${property.name}:`, error);
+    return { ...property, reviews_summary: 'Could not summarize reviews.' };
+  }
 }
 
 async function formatHotelResults(
@@ -136,10 +230,39 @@ See more options or change the search details on **[🏨 Google Hotels](${
   })**.
 </example_markdown_output>`;
 
+  const propertiesMarkdown = properties
+    .map(
+      (p) =>
+        `## ${p.name}\n* 🌐 [Website](${p.link})\n* 📍[${
+          p.address
+        }](https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          `${p.name} ${p.address}`,
+        )})\n* 🏨 ${
+          p.amenities_extracted?.join(', ') || 'Amenities not listed'
+        }\n* 💬 ${p.reviews_summary}\n* ⭐ ${p.overall_rating} - ${
+          p.rating_word
+        } (${p.reviews} reviews)\n${
+          p.prices
+            ?.slice(0, 3)
+            .map(
+              (price: any) =>
+                `* [${price.source}](${price.link}) - ${
+                  price.rate_per_night?.extracted_lowest
+                    ? `$${price.rate_per_night.extracted_lowest}/night`
+                    : 'Price not available'
+                }`,
+            )
+            .join('\n') || 'No pricing found.'
+        }`,
+    )
+    .join('\n\n');
+
+  const fullPrompt = `${formattingPrompt}\n\n<properties_markdown>\n${propertiesMarkdown}\n</properties_markdown>`;
+
   const formattingModel = genAI.getGenerativeModel({
     model: 'gemini-1.5-pro-preview-0514',
   });
-  const result = await formattingModel.generateContent(formattingPrompt);
+  const result = await formattingModel.generateContent(fullPrompt);
   const response = result.response;
   return response.text();
 }
@@ -180,11 +303,29 @@ export const googleHotels = ({ userId }: { userId: string }) =>
             return;
           }
 
-          const topProperties = hotelsResponse.properties.slice(0, 5);
+          const topProperties = hotelsResponse.properties?.slice(0, 10) || [];
+
+          if (topProperties.length === 0) {
+            stream.done({
+              result:
+                'No hotels found matching your search criteria. Please try adjusting your search parameters.',
+            });
+            return;
+          }
+
+          stream.update('Fetching detailed information for top results...');
+          const detailedProperties = await Promise.all(
+            topProperties.map(getPropertyDetails),
+          );
+
+          stream.update('Summarizing reviews...');
+          const summarizedProperties = await Promise.all(
+            detailedProperties.map(summarizeReviews),
+          );
 
           stream.update('Formatting results...');
           const finalResult = await formatHotelResults(
-            topProperties,
+            summarizedProperties,
             hotelsResponse,
             context,
             query,
