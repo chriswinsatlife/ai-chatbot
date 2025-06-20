@@ -444,7 +444,7 @@ ${searchResults.search_metadata?.prettify_html_file || searchResults.search_meta
 export const googleHotels = ({ userId }: { userId: string }) =>
   tool({
     description:
-      'Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool helps find accommodations with detailed information including prices, reviews, amenities, and availability.',
+      "Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool retrieves the user's saved accommodation preferences from the 'context_hotels' column in the 'User_Profiles' table in Supabase to tailor the search. It helps find accommodations with detailed information including prices, reviews, amenities, and availability.",
     parameters: z.object({
       query: z
         .string()
