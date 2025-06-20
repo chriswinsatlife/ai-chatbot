@@ -163,6 +163,8 @@ ${query}
       adults: payload.adults || 1,
       children: payload.children || 0,
       rating: '8', // from n8n
+      currency: 'USD', // Allow global search with USD currency
+      hl: 'en', // English language but no geographic restriction
     };
 
     if (payload.vacation_rentals) {
@@ -198,10 +200,44 @@ ${query}
 }
 
 async function searchGoogleHotels(searchParams: any): Promise<any> {
-  return getJson('google_hotels', {
+  console.log(
+    `[GoogleHotels] Making SerpAPI call with params:`,
+    JSON.stringify(searchParams, null, 2),
+  );
+
+  const serpApiParams = {
     ...searchParams,
     api_key: SERPAPI_API_KEY,
-  });
+  };
+
+  console.log(
+    `[GoogleHotels] Full SerpAPI params including API key:`,
+    JSON.stringify({ ...serpApiParams, api_key: '***REDACTED***' }, null, 2),
+  );
+
+  const result = await getJson('google_hotels', serpApiParams);
+
+  console.log(
+    `[GoogleHotels] SerpAPI response metadata:`,
+    JSON.stringify(result.search_metadata, null, 2),
+  );
+  console.log(
+    `[GoogleHotels] SerpAPI response search parameters:`,
+    JSON.stringify(result.search_parameters, null, 2),
+  );
+
+  if (result.properties && result.properties.length > 0) {
+    console.log(
+      `[GoogleHotels] First 3 properties found:`,
+      result.properties.slice(0, 3).map((p: any) => ({
+        name: p.name,
+        address: p.address,
+        link: p.link,
+      })),
+    );
+  }
+
+  return result;
 }
 
 async function getPropertyDetails(property: any): Promise<any> {
