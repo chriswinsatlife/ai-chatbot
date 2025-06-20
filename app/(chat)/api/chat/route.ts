@@ -46,6 +46,68 @@ import {
 } from '@/lib/types';
 import { tool } from 'ai';
 
+// Add this new function to create the stream filter
+function createToolCallFilteringStream() {
+  let hasSeenToolCall = false;
+  let textBuffer: string[] = [];
+
+  return new TransformStream({
+    transform(chunk, controller) {
+      // Decode the chunk into a string
+      const anystr = new TextDecoder().decode(chunk);
+
+      // Regex to find all structured parts (e.g., `0:"text"\n`, `2:I{"type":"tool-call",...`)
+      const regex = /(\d+):({.*?}|".*?")\n/g;
+      let match;
+
+      while ((match = regex.exec(anystr)) !== null) {
+        const type = match[1];
+        const data = match[2];
+
+        if (type === '2') {
+          // This is a tool-call part
+          try {
+            const toolCallData = JSON.parse(data);
+            if (toolCallData.type === 'tool-call') {
+              hasSeenToolCall = true;
+              // immediately send the tool call
+              controller.enqueue(chunk);
+              // and clear any buffered text, as it was just filler
+              textBuffer = [];
+              return; // Stop processing this chunk
+            }
+          } catch (e) {
+            // Not a valid JSON tool call, treat as text
+          }
+        }
+
+        if (type === '0') {
+          // This is a text part
+          textBuffer.push(anystr);
+        }
+      }
+
+      // If we haven't seen a tool call yet, we don't know if the text is filler or the final answer.
+      // So we wait. If we HAVE seen a tool call, we know any subsequent text is part of the final
+      // answer, so we can send it immediately.
+      if (hasSeenToolCall) {
+        controller.enqueue(chunk);
+      }
+    },
+    flush(controller) {
+      // If the stream is closing and we *never* saw a tool call,
+      // it means the buffered text was the final answer. Send it now.
+      if (!hasSeenToolCall && textBuffer.length > 0) {
+        textBuffer.forEach(chunkStr => {
+          controller.enqueue(new TextEncoder().encode(chunkStr));
+        });
+      }
+      // If we did see a tool call, the buffer has already been cleared,
+      // and there's nothing to flush.
+    },
+  });
+}
+
 // Add type declaration at the top of the file
 declare global {
   var activeStreams:
@@ -55,7 +117,7 @@ declare global {
 
 const client = new MemoryClient({ apiKey: process.env.MEM0_API_KEY || '' });
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Define n8n webhook URLs from environment variables
 const n8nWebhookUrls: Record<string, string> = {
@@ -629,7 +691,7 @@ export async function POST(request: Request) {
           console.log(
             `[SERVER_API_CHAT_DEBUG] Calling streamText for standard chat ${chatId} with Langsmith telemetry enabled.`,
           );
-          const result = streamText({
+          const result = await streamText({
             model: myProvider.languageModel(selectedChatModel),
             system: systemPrompt({ selectedChatModel }),
             messages: finalMessagesForAI, // Use the converted CoreMessage[]
