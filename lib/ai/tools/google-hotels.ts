@@ -1,18 +1,15 @@
 import { createStreamableValue } from 'ai/rsc';
 import { z } from 'zod';
-import { tool } from 'ai';
+import { tool, generateText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db/queries';
 import { userProfiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getJson } from 'serpapi';
+import { myProvider } from '../providers';
 
 // Use provided API keys directly
-const GOOGLE_API_KEY = 'AIzaSyBEPIFuC3JvxEpMaCtQmqhIP8l38svfqMM';
 const SERPAPI_API_KEY = '4c964694f77ae45f7e16a8cf0d202e54108a368e82ab5ce0566bc2b53d54e8fe';
-
-const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
 interface GoogleHotelsProps {
   userId: string;
@@ -109,12 +106,10 @@ ${query}
 </User_Query>`;
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-preview-04-17',
+    const { text } = await generateText({
+      model: myProvider.languageModels['gemini-2.5-flash'],
+      prompt: prompt,
     });
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
     const jsonString = text
       .replace(/```json/g, '')
       .replace(/```/g, '')
@@ -233,11 +228,10 @@ ${
 }`;
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-preview-04-17',
+    const { text: summary } = await generateText({
+      model: myProvider.languageModels['gemini-2.5-flash'],
+      prompt: reviewContent,
     });
-    const result = await model.generateContent(reviewContent);
-    const summary = result.response.text();
     return { ...property, reviews_summary: summary };
   } catch (error) {
     console.error(`Failed to summarize reviews for ${property.name}:`, error);
@@ -405,12 +399,10 @@ See more options or change the search details on **[🏨 Google Hotels](${search
 </example_markdown_output>`;
 
   try {
-    const formattingModel = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-preview-04-17',
+    const { text: formattedText } = await generateText({
+      model: myProvider.languageModels['gemini-2.5-flash'],
+      prompt: formattingPrompt,
     });
-    const result = await formattingModel.generateContent(formattingPrompt);
-    const response = result.response;
-    const formattedText = result.response.text();
     
     // Add the final response structure (matching n8n workflow)
     const finalResponse = `# Accommodation Options
