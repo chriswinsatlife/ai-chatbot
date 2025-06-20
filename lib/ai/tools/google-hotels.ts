@@ -194,7 +194,7 @@ export const googleHotels = ({ userId }: { userId: string }) =>
         } catch (error) {
           console.error('Error in Google Hotels tool:', error);
           stream.done({
-            error:
+            result:
               'I encountered an error while searching for hotels. Please try again later.',
           });
         }
