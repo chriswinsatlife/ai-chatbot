@@ -423,39 +423,24 @@ async function formatHotelResults(
   context: string | null,
   query: string,
 ): Promise<string> {
-  console.log(
-    `[GoogleHotels] Formatting ${properties.length} properties with context: ${context ? 'Available' : 'None'}`,
-  );
-
-  // Flatten each property's data exactly like the n8n workflow does
-  function flatten(obj: any, prefix = ''): any {
-    return Object.entries(obj).reduce((acc: any, [k, v]) => {
-      const pre = prefix.length ? `${prefix}.` : '';
-      if (v && typeof v === 'object' && !Array.isArray(v)) {
-        Object.assign(acc, flatten(v, pre + k));
-      } else {
-        acc[pre + k] = v;
-      }
-      return acc;
-    }, {});
+  if (properties.length === 0) {
+    return 'No properties found matching the criteria.';
   }
 
-  // Create the accommodation options data structure exactly like n8n
-  const accommodationOptions = properties
-    .map((property, index) => {
-      const flattenedOption = flatten(property);
-      const formattedProperties = Object.entries(flattenedOption)
-        .map(([k, v]) => `\n\t${k}: ${v}`)
-        .join('');
-      return `- ## Option ${index + 1} of ${properties.length}${formattedProperties}`;
-    })
-    .join('\n\n');
+  const propertiesData = JSON.stringify(
+    properties.map((p) => trimFields(p)),
+    null,
+    2,
+  );
+  const searchMetadata = searchResults.search_metadata || {};
+  const googleHotelsUrl =
+    searchMetadata.google_hotels_url || 'https://www.google.com/travel/hotels';
 
-  // Use the exact prompt from the n8n workflow
-  const formattingPrompt = `<instructions>
+  // This prompt is copied EXACTLY from the n8n "Review & Format" node.
+  const prompt = `<instructions>
 Please organize the following accommodation options in a proper markdown output. 
 
-- Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-formatted output.
+- Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-fromatted output.
 - Output markdown following the example provided. 
 - Ensure to include the full booking URLs and NEVER truncate them. You only need to include 1-2 booking options per property--not all.
 - Make sure to take into account the client's accommodation preferences when ordering the hotels, which are given below.
@@ -465,7 +450,7 @@ Please organize the following accommodation options in a proper markdown output.
 </instructions>
 
 <accommodation_options (${properties.length}_options)>
-${accommodationOptions}
+${propertiesData}
 </accommodation_options>
 
 <Client_Context>
@@ -480,31 +465,33 @@ ${query}
 ## The Aviator Bali
 * 🌐 [Website](https://aviatorbali.com)
 * 📍[Jalan Tegal Sari Gang Kana No.59, Tibubeneng, Kuta Utara, 80363 Canggu](https://www.google.com/maps/search/?api=1&query=name+address)
-* 🏨 Key Amenities Summary
-* 💬 Reviews Summary
+* 🏨 ${'key_amenities_summary'}
+* 💬 ${'reviews_summary'}
 * ⭐ 9.2 - Exceptional (74 reviews) 
 * [Booking.com](https://www.booking.com/full_link) - $1,826
-        * Pay online, non-refundable
+	* Pay online, non-refundable
 * [Agoda](https://www.agoda.com/aviator-bali/hotel/full_link) - $2,735
-        * Pay at check-in, free cancellation until 11:59PM on July 13, 2025
-* [Website](https://hotels.cloudbeds.com/en/reservation/full_link) - $1,627.81
-        * Pay online, non-refundable
+	* Pay at check-in, free cancellation until 11:59PM on July 13, 2025
+* [Website](https://hotels.cloudbeds.com/en/reservation/full_link - $ 1,627.81
+	* Pay online, non-refundable
 
-See more options or change the search details on **[🏨 Google Hotels](${searchResults.search_metadata?.prettify_html_file || searchResults.search_metadata?.google_hotels_url || 'https://www.google.com/travel/hotels'})**.
+${'3-11 similar reviews...'}
+
+See more options or change the search details on **[🏨 Google Hotels](${googleHotelsUrl})**.
 </example_markdown_output>`;
 
-  try {
-    console.log(
-      `[GoogleHotels] Starting AI formatting with ${properties.length} properties`,
-    );
-    console.log(
-      `[GoogleHotels] Accommodation options data length: ${accommodationOptions.length} characters`,
-    );
+  console.log(
+    `[GoogleHotels] Starting AI formatting with ${properties.length} properties`,
+  );
+  console.log(
+    `[GoogleHotels] Accommodation options data length: ${propertiesData.length} characters`,
+  );
 
+  try {
     // Use Gemini 2.5 Flash like the n8n workflow
     const { text: formattedText } = await generateText({
       model: openai('gpt-4o'), // Using GPT-4.1 since Gemini was causing issues
-      prompt: formattingPrompt,
+      prompt: prompt,
     });
 
     console.log(
@@ -512,11 +499,6 @@ See more options or change the search details on **[🏨 Google Hotels](${search
     );
 
     // Create the final response exactly like the n8n workflow Response node
-    const googleHotelsUrl =
-      searchResults.search_metadata?.prettify_html_file ||
-      searchResults.search_metadata?.google_hotels_url ||
-      'https://www.google.com/travel/hotels';
-
     const finalResponse = `# Accommodation Options
 ${formattedText
   .split('\n')
