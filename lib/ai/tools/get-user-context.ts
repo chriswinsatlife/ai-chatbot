@@ -172,7 +172,7 @@ ${query}
 </Search_Query>`;
 
           const columnSelectionResult = await generateText({
-            model: myProvider.languageModel('gpt-4'), // same model family as gpt-4.1 in n8n
+            model: myProvider.languageModel('gpt-4.1'), // exact model from legacy n8n workflow
             system: prompt,
             prompt:
               'Return a JSON object that matches the schema {"columns": ["column_a", "column_b", ...]}',
@@ -195,7 +195,7 @@ ${query}
               '[getUserContext] Initial parse failed – running auto-fix pass',
             );
             const fixResult = await generateText({
-              model: myProvider.languageModel('gpt-4'),
+              model: myProvider.languageModel('gpt-4.1-mini'),
               system: `Fix the following text so that it is *exactly* valid JSON matching the schema {"columns": ["..."]}. Only output JSON.`,
               prompt: columnSelectionResult.text,
             });
