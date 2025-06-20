@@ -28,11 +28,7 @@ export const postRequestBodySchema = z.object({
     parts: z.array(partSchema),
     experimental_attachments: z.array(experimentalAttachmentSchema).optional(),
   }),
-  selectedChatModel: z.enum([
-    'chat-model',
-    'chat-model-reasoning',
-    'n8n-assistant',
-  ]),
+  selectedChatModel: z.string(),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
 
