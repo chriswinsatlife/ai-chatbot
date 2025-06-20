@@ -88,104 +88,131 @@ The tool intelligently selects only the most relevant context fields based on yo
 
         let selectedColumns: string[] = [];
 
-        // If contextTypes not specified, use AI to intelligently select columns
+        // If contextTypes not specified, use the ORIGINAL n8n workflow logic to choose columns
         if (!contextTypes || contextTypes.length === 0) {
           console.log(
-            `[getUserContext] Using AI to select relevant columns for query: "${query}"`,
+            `[getUserContext] [n8n-style] Selecting columns via GPT-4 for query: "${query}"`,
           );
 
-          const availableColumns = [
-            'context_email_analysis',
-            'context_email_writing_style',
-            'context_calendar',
-            'context_flights',
-            'context_hotels',
-            'context_vacation_rentals',
-            'context_personal_purchases',
-            'context_professional_purchases',
-            'context_gift_purchases',
-            'context_network',
-            'context_books',
-            'context_daily',
-            'context_google_drive_files',
-            'pdl_person_data',
-            'pdl_org_data',
-            'person_deep_research_data',
-            'org_deep_research_data',
-            'org_website_scrape',
-            'context_job_listings_intelligence',
-            'context_eng_listings_intelligence',
-            'context_marketing_listings_intelligence',
-            'context_sales_listings_intelligence',
-            'context_product_listings_intelligence',
-            'context_company_job_listings',
-            'full_name',
-            'company_name',
+          // ------------------------------------------------------------------
+          // 1. Fetch table schema from information_schema so we can build the
+          //    <User_Database_Columns> block exactly as the n8n workflow did.
+          // ------------------------------------------------------------------
+          const rawSchema = await db.execute(
+            `SELECT column_name, data_type
+             FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'User_Profiles';`,
+          );
+
+          // 2. Filter out metadata / low-signal columns exactly like the n8n Set node
+          const columnBlacklist = [
+            'id',
+            'created_at',
+            'modified_at',
+            'clerk_id',
+            'google_refresh_token',
             'job_title',
-            'context_location',
+            'email',
           ];
 
-          // Use AI to select relevant columns based on the query
+          const schemaRows: any[] = Array.isArray(rawSchema)
+            ? (rawSchema as any[])
+            : (rawSchema as any).rows;
+
+          const availableColumnsArr = schemaRows
+            .filter(
+              (r: any) =>
+                !columnBlacklist.includes(r.column_name) &&
+                !r.column_name.includes('name'),
+            )
+            .map((r: any) => `\t${r.column_name}: ${r.data_type}`)
+            .sort();
+
+          const availableColumnsStr = availableColumnsArr.join('\n');
+
+          // 3. Build the ORIGINAL prompt (verbatim, trimmed for variables)
+          const prompt = `<context>
+You are an assistant in an AI chat application. The user has sent a message or request which may require additional context to answer or fulfill comprehensively.
+
+For each user's client, we have several <User_Database_Columns> which are itemized below. These are often very lengthy, so we cannot include all (or even many) in every system prompt, since this would overload the context window for the LLM.
+
+Your role is to identify which columns are most directly or indirectly relevant to the query/message. You must return a JSON array of column names, which are listed below.
+
+Most of these columns are generated from the client's SaaS account data.
+- For example, calendar, email, network, and drive context are analyses of multiple years of email threads, calendar events, and work artifacts (including collaborators or correspondents).
+- Similarly, the context for flights, hotels, personal and gift purchases, and so on are detailed (50k+ characters) reports from an AI on the client's past data.
+- Context_Daily includes information about all recent activity across all connected SaaS applications, typically the last 24h or 7d.
+- PDL is shorthand for People Data Labs, a B2B enrichment API service. It mostly has demographic and firmographic data about businesses and individuals, and is not very detailed.
+- Deep research refers to lengthy reports compiled by an AI assistant with complete web access, such as OpenAI's ChatGPT or Google Gemini using their latest research features.
+- "Person" refers to ${userProfile.full_name ?? 'the client'}, whose title is ${userProfile.job_title ?? 'unknown title'} at ${userProfile.company_name ?? 'unknown company'}.
+- "Company" refers to ${userProfile.company_name ?? 'the client company'}, the client's primary company.
+</context>
+
+<Guidelines>
+- Based on the below <User_Message> and <Search_Query>, please output the names of the columns from the <User_Database_Columns> which may include relevant information.
+- Err on the side of more rather than fewer columns.
+- You must always output at least one column name.
+- Output JSON according to the schema.
+</Guidelines>
+
+<Current_DateTime>
+${new Date().toString()}
+</Current_DateTime>
+
+<User_Database_Columns>
+${availableColumnsStr}
+</User_Database_Columns>
+
+<User_Message>
+${query}
+</User_Message>
+
+<Search_Query>
+${query}
+</Search_Query>`;
+
           const columnSelectionResult = await generateText({
-            model: myProvider.languageModel('artifact-model'),
-            system: `You are analyzing a user query to determine which database columns contain relevant context information.
-
-Available columns and their contents:
-- context_email_analysis: Analysis of email patterns and communication style
-- context_email_writing_style: User's writing style and preferences  
-- context_calendar: Calendar events and scheduling patterns
-- context_flights: Flight preferences and travel history
-- context_hotels: Hotel preferences and booking patterns
-- context_vacation_rentals: Vacation rental preferences
-- context_personal_purchases: Personal purchase history and preferences
-- context_professional_purchases: Professional/business purchase patterns
-- context_gift_purchases: Gift giving patterns and preferences
-- context_network: Professional network and collaborators
-- context_books: Reading preferences and book interests
-- context_daily: Recent daily activity across SaaS apps
-- context_google_drive_files: Analysis of files and documents
-- pdl_person_data: Demographic and professional data
-- pdl_org_data: Company and organizational data
-- person_deep_research_data: Deep research on the person
-- org_deep_research_data: Deep research on their company
-- org_website_scrape: Company website content analysis
-- context_job_listings_intelligence: Job market analysis
-- context_eng_listings_intelligence: Engineering job market data
-- context_marketing_listings_intelligence: Marketing job market data
-- context_sales_listings_intelligence: Sales job market data
-- context_product_listings_intelligence: Product job market data
-- context_company_job_listings: Company's job postings
-- full_name, company_name, job_title: Basic identity info
-- context_location: Location and geographic context
-
-Return a JSON array of column names that are most relevant to the query. Always include at least one column. Err on the side of including more rather than fewer relevant columns.`,
-            prompt: `User Query: "${query}"
-
-Select the most relevant database columns for this query.`,
+            model: myProvider.languageModel('gpt-4'), // same model family as gpt-4.1 in n8n
+            system: prompt,
+            prompt:
+              'Return a JSON object that matches the schema {"columns": ["column_a", "column_b", ...]}',
           });
 
-          try {
-            const parsed = JSON.parse(columnSelectionResult.text);
-            selectedColumns = Array.isArray(parsed)
-              ? parsed
-              : parsed.columns || [];
-            console.log(
-              `[getUserContext] AI selected columns:`,
-              selectedColumns,
-            );
-          } catch (parseError) {
+          const attemptParse = (txt: string): string[] | null => {
+            try {
+              const parsed = JSON.parse(txt);
+              return Array.isArray(parsed) ? parsed : parsed.columns;
+            } catch {
+              return null;
+            }
+          };
+
+          selectedColumns = attemptParse(columnSelectionResult.text) || [];
+
+          // 4. If parse failed, run an auto-fix pass (mirrors Output Parser Autofixing)
+          if (selectedColumns.length === 0) {
             console.warn(
-              `[getUserContext] Failed to parse AI column selection, using fallback:`,
-              parseError,
+              '[getUserContext] Initial parse failed – running auto-fix pass',
             );
-            // Fallback to basic columns if parsing fails
-            selectedColumns = [
-              'full_name',
-              'company_name',
-              'job_title',
-              'context_daily',
-            ];
+            const fixResult = await generateText({
+              model: myProvider.languageModel('gpt-4'),
+              system: `Fix the following text so that it is *exactly* valid JSON matching the schema {"columns": ["..."]}. Only output JSON.`,
+              prompt: columnSelectionResult.text,
+            });
+            selectedColumns = attemptParse(fixResult.text) || [];
           }
+
+          if (selectedColumns.length === 0) {
+            console.error(
+              '[getUserContext] Failed to obtain column list even after auto-fix',
+            );
+            return { error: 'Column selection failed' };
+          }
+
+          console.log(
+            '[getUserContext] GPT-4 selected columns:',
+            selectedColumns,
+          );
         } else {
           console.log(
             `[getUserContext] Using specified contextTypes:`,
