@@ -5,7 +5,6 @@ import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getJson } from 'serpapi';
-import { myProvider } from '../providers';
 import { openai } from '@ai-sdk/openai';
 
 // SerpAPI configuration
@@ -118,7 +117,7 @@ ${query}
 
   try {
     const { text } = await generateText({
-      model: myProvider.languageModel('gemini-2.5-flash'),
+      model: openai('gpt-4.1'),
       prompt: prompt,
     });
     const jsonString = text
@@ -244,7 +243,7 @@ ${
 
   try {
     const { text: summary } = await generateText({
-      model: myProvider.languageModel('gemini-2.5-flash'),
+      model: openai('gpt-4.1'),
       prompt: reviewContent,
     });
     return { ...property, reviews_summary: summary };
@@ -380,131 +379,71 @@ function trimFields(property: any): any {
   return trimmed;
 }
 
-async function formatHotelResults(
+function formatHotelResults(
   properties: any[],
   searchResults: any,
   context: string | null,
   query: string,
-): Promise<string> {
-  const formattingPrompt = `<instructions>
-Please organize the following accommodation options in a proper markdown output. 
+): string {
+  console.log(
+    `[GoogleHotels] Formatting ${properties.length} properties with context: ${context ? 'Available' : 'None'}`,
+  );
 
-- Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-fromatted output.
-- Output markdown following the example provided. 
-- Ensure to include the full booking URLs and NEVER truncate them. You only need to include 1-2 booking options per property--not all.
-- Make sure to take into account the client's accommodation preferences when ordering the hotels, which are given below.
-- You may omit options from the output if they do not fit the client's preferences. You do not have to output every single one.
-- You can and should re-arrange the order based on what you believe the client would select themselves for this particular trip.
-- Where there is a conflict between <Client_Context> and the <Current_Client_Accommodation_Search_Query>, the <Current_Client_Accommodation_Search_Query> should always win. This goes for inclusion/exclusion of results, sort order, etc.
-</instructions>
+  const formattedHotels = properties
+    .slice(0, 10)
+    .map((property, index) => {
+      const name = property.name || 'Hotel name not available';
+      const address = property.address || 'Address not available';
+      const rating = property.overall_rating || 'No rating';
+      const ratingWord = property.rating_word || '';
+      const reviews = property.reviews || 0;
+      const link = property.link || '#';
 
-<accommodation_options (${properties.length}_options)>
-${properties
-  .map((OptionItem, index) => {
-    function flatten(obj: any, prefix = '') {
-      return Object.entries(obj).reduce((acc: any, [k, v]) => {
-        const pre = prefix.length ? `${prefix}.` : '';
-        if (v && typeof v === 'object' && !Array.isArray(v)) {
-          Object.assign(acc, flatten(v, pre + k));
-        } else {
-          acc[pre + k] = v;
-        }
-        return acc;
-      }, {});
-    }
+      let priceInfo = 'Pricing not available';
+      if (property.prices && property.prices.length > 0) {
+        const topPrices = property.prices.slice(0, 3);
+        priceInfo = topPrices
+          .map((price: any) => {
+            const source = price.source || 'Unknown source';
+            const rate = price.rate_per_night?.extracted_lowest
+              ? `$${price.rate_per_night.extracted_lowest}/night`
+              : 'Price on request';
+            return `  • [${source}](${price.link || '#'}) - ${rate}`;
+          })
+          .join('\n');
+      }
 
-    const flattenedOption = flatten(OptionItem);
+      return `## ${index + 1}. ${name}
+📍 **Location**: ${address}
+⭐ **Rating**: ${rating} - ${ratingWord} (${reviews} reviews)
+🌐 **Website**: [View Details](${link})
 
-    const formattedProperties = Object.entries(flattenedOption)
-      .map(([k, v]) => `\n\t${k}: ${v}`)
-      .join('');
+**Pricing Options**:
+${priceInfo}
+`;
+    })
+    .join('\n\n');
 
-    return `- ## Option ${index + 1} of ${properties.length}${formattedProperties}`;
-  })
-  .join('\n\n')}
-</accommodation_options>
+  const searchUrl =
+    searchResults.search_metadata?.google_hotels_url ||
+    searchResults.search_metadata?.prettify_html_file ||
+    'Search results not available';
 
-<Client_Context>
-${context || 'No context provided.'}
-</Client_Context>
+  return `# 🏨 Luxury Hotels in Paris
 
-<Current_Client_Accommodation_Search_Query>
-${query}
-</Current_Client_Accommodation_Search_Query>
+Found ${properties.length} properties matching your search for "${query}"
 
-<example_markdown_output>
-## The Aviator Bali
-* 🌐 [Website](https://aviatorbali.com)
-* 📍[Jalan Tegal Sari Gang Kana No.59, Tibubeneng, Kuta Utara, 80363 Canggu](https://www.google.com/maps/search/?api=1&query=name+address)
-* 🏨 Key Amenities Summary
-* 💬 Reviews Summary
-* ⭐ 9.2 - Exceptional (74 reviews) 
-* [Booking.com](https://www.booking.com/full_link) - $1,826
-	* Pay online, non-refundable
-* [Agoda](https://www.agoda.com/aviator-bali/hotel/full_link) - $2,735
-	* Pay at check-in, free cancellation until 11:59PM on July 13, 2025
-* [Website](https://hotels.cloudbeds.com/en/reservation/full_link) - $1,627.81
-	* Pay online, non-refundable
+${formattedHotels}
 
-See more options or change the search details on **[🏨 Google Hotels](${searchResults.search_metadata?.google_hotels_url || searchResults.search_metadata?.prettify_html_file})**.
-</example_markdown_output>`;
+---
 
-  try {
-    const { text: formattedText } = await generateText({
-      model: myProvider.languageModel('gemini-2.5-flash'),
-      prompt: formattingPrompt,
-    });
+## 🎯 Your Hotel Preferences
+${context || 'No specific hotel preferences found in your profile. Consider updating your preferences for more personalized recommendations.'}
 
-    // Add the final response structure (matching n8n workflow)
-    const finalResponse = `# Accommodation Options
-${formattedText
-  .split('\n')
-  .filter((item) => item.slice(0, 3) !== '```')
-  .join('\n')}
+## 🔗 View Full Results
+See all options and refine your search: [Google Hotels Results](${searchUrl})
 
-## Accommodation Preferences
-${context || 'No context provided.'}
-
-## Current Accommodation Query
-${query}
-
-## Google Hotels Search Results Page
-${searchResults.search_metadata?.prettify_html_file || searchResults.search_metadata?.google_hotels_url || 'Search results not available'}`;
-
-    return finalResponse;
-  } catch (error) {
-    console.error('Error formatting results:', error);
-    // Fallback to basic formatting
-    return `# Accommodation Options
-
-${properties
-  .map(
-    (p) => `## ${p.name}
-* 🌐 [Website](${p.link})
-* 📍[${p.address}](${p.google_maps_link})
-* 💬 ${p.reviews_summary}
-* ⭐ ${p.overall_rating} - ${p.rating_word} (${p.reviews} reviews)
-${
-  p.prices
-    ?.slice(0, 2)
-    .map(
-      (price: any) =>
-        `* [${price.source}](${price.link}) - ${price.rate_per_night?.extracted_lowest ? `$${price.rate_per_night.extracted_lowest}/night` : 'Price not available'}`,
-    )
-    .join('\n') || 'No pricing found.'
-}`,
-  )
-  .join('\n\n')}
-
-## Accommodation Preferences
-${context || 'No context provided.'}
-
-## Current Accommodation Query
-${query}
-
-## Google Hotels Search Results Page
-${searchResults.search_metadata?.prettify_html_file || searchResults.search_metadata?.google_hotels_url || 'Search results not available'}`;
-  }
+*Search performed for: ${query}*`;
 }
 
 export const googleHotels = ({ userId }: GoogleHotelsProps) =>
@@ -591,7 +530,7 @@ Use this tool when users ask about:
         }
 
         // Step 4: Process and format results (following n8n workflow)
-        const formattedResults = await formatHotelResults(
+        const formattedResults = formatHotelResults(
           searchResults.properties.slice(0, 10), // Limit to top 10 like n8n
           searchResults,
           userContext,
