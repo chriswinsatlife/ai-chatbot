@@ -401,8 +401,8 @@ function formatHotelResults(
     `[GoogleHotels] Formatting ${properties.length} properties with context: ${context ? 'Available' : 'None'}`,
   );
 
-  const formattedHotels = properties
-    .slice(0, 10)
+  // Build the actual hotel listings from the API data
+  const hotelListings = properties
     .map((property, index) => {
       const name = property.name || 'Hotel name not available';
       const address = property.address || 'Address not available';
@@ -411,51 +411,54 @@ function formatHotelResults(
       const reviews = property.reviews || 0;
       const link = property.link || '#';
 
-      let priceInfo = 'Pricing not available';
+      // Build pricing information from actual API data
+      const pricingLines: string[] = [];
       if (property.prices && property.prices.length > 0) {
-        const topPrices = property.prices.slice(0, 3);
-        priceInfo = topPrices
-          .map((price: any) => {
-            const source = price.source || 'Unknown source';
-            const rate = price.rate_per_night?.extracted_lowest
-              ? `$${price.rate_per_night.extracted_lowest}/night`
+        property.prices.slice(0, 3).forEach((price: any) => {
+          const source = price.source || 'Unknown';
+          const priceLink = price.link || '#';
+          const rate = price.rate_per_night?.extracted_lowest
+            ? `$${price.rate_per_night.extracted_lowest}/night`
+            : price.total_rate?.extracted_lowest
+              ? `$${price.total_rate.extracted_lowest} total`
               : 'Price on request';
-            return `  • [${source}](${price.link || '#'}) - ${rate}`;
-          })
-          .join('\n');
+          pricingLines.push(`* [${source}](${priceLink}) - ${rate}`);
+        });
       }
 
-      return `## ${index + 1}. ${name}
-📍 **Location**: ${address}
-⭐ **Rating**: ${rating} - ${ratingWord} (${reviews} reviews)
-🌐 **Website**: [View Details](${link})
+      if (pricingLines.length === 0) {
+        pricingLines.push('* Pricing information not available');
+      }
 
-**Pricing Options**:
-${priceInfo}
-`;
+      return `## ${name}
+* 🌐 [Website](${link})
+* 📍 ${address}
+* ⭐ ${rating} - ${ratingWord} (${reviews} reviews)
+${pricingLines.join('\n')}`;
     })
     .join('\n\n');
 
-  const searchUrl =
+  // Get the actual Google Hotels search URL from the API response
+  const googleHotelsUrl =
     searchResults.search_metadata?.google_hotels_url ||
     searchResults.search_metadata?.prettify_html_file ||
-    'Search results not available';
+    'https://www.google.com/travel/hotels';
 
-  return `# 🏨 Luxury Hotels in Paris
+  // Format the final response exactly like the n8n workflow
+  return `# Accommodation Options
 
-Found ${properties.length} properties matching your search for "${query}"
+${hotelListings}
 
-${formattedHotels}
+See more options or change the search details on **[🏨 Google Hotels](${googleHotelsUrl})**.
 
----
+## Accommodation Preferences
+${context || 'No context provided.'}
 
-## 🎯 Your Hotel Preferences
-${context || 'No specific hotel preferences found in your profile. Consider updating your preferences for more personalized recommendations.'}
+## Current Accommodation Query
+${query}
 
-## 🔗 View Full Results
-See all options and refine your search: [Google Hotels Results](${searchUrl})
-
-*Search performed for: ${query}*`;
+## Google Hotels Search Results Page
+${googleHotelsUrl}`;
 }
 
 export const googleHotels = ({ userId }: GoogleHotelsProps) =>
