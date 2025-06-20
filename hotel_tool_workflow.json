@@ -393,7 +393,7 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "modelName": "models/gemini-2.5-flash",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
@@ -403,7 +403,7 @@
         520
       ],
       "id": "cdb21c79-0b3b-4b10-9a36-1432f4b8cd2e",
-      "name": "2.5 Flash Preview 05-20 - 1",
+      "name": "2.5 Flash - 1",
       "credentials": {
         "googlePalmApi": {
           "id": "2Cp6RMzdRUNQWalT",
@@ -615,7 +615,7 @@
         ]
       ]
     },
-    "2.5 Flash Preview 05-20 - 1": {
+    "2.5 Flash - 1": {
       "ai_languageModel": [
         [
           {
