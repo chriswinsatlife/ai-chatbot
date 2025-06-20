@@ -183,60 +183,97 @@ async function getPropertyDetails(property: any): Promise<any> {
   return property;
 }
 
-async function summarizeReviews(property: any): Promise<any> {
-  if (!property.reviews_breakdown && !property.other_reviews) {
-    return { ...property, reviews_summary: 'No review data available.' };
+async function summarizeAllReviewsInBatch(
+  properties: any[],
+): Promise<any[]> {
+  if (!properties || properties.length === 0) {
+    return properties;
   }
 
-  const reviewContent = `Let's summarize the reviews about this hotel or vacation rental. Be as concise as possible. Just capture the key details, red flags, and positive points. You do not need to speak in complete sentences.
+  // Create a prompt that asks the AI to process all hotels at once
+  const reviewContent = `I have a list of hotels. For each hotel, please provide a concise summary of its reviews. Capture key details, red flags, and positive points. You do not need to speak in complete sentences.
+Your response MUST be a valid JSON array of strings, where each string in the array is the review summary for the corresponding hotel in the input list. The order must be preserved. For example, if the input has 3 hotels, the output should be ["summary for hotel 1", "summary for hotel 2", "summary for hotel 3"].
 
-## Property Name:
-${property.name}
+Here is the list of hotels and their reviews:
+${properties
+  .map(
+    (property, index) => `
+---
+## Hotel ${index + 1}: ${property.name}
 
-## Reviews & Ratings:
-### Review Count: ${property.reviews}
-### Overall Rating: ${property.overall_rating} / 5
-  - Note: The average Google star rating for hotels is generally around 4.42 stars, according to a study from BrightLocal. Below 4.4 is below average. Below a 4 indicates serious issues with the property. 4.5-4.6+ is likely the bare minimum for a respectable property.
-### Rating Details: 
-${
-  property.ratings
-    ?.map(
-      (item: any) =>
-        `\t- ${item.stars}/5 Stars: ${item.count}/${property.reviews} (${((item.count / property.reviews) * 100).toFixed(1)}%)`,
-    )
-    .join('\n') || 'Not available.'
-}
+### Reviews & Ratings:
+- Review Count: ${property.reviews}
+- Overall Rating: ${property.overall_rating} / 5
+- Rating Details: ${
+      property.ratings
+        ?.map((item: any) => `${item.stars}/5 Stars: ${item.count}`)
+        .join(', ') || 'N/A'
+    }
 
-## Review Breakdown:
+### Review Breakdown:
 ${
   property.reviews_breakdown
     ?.map(
       (item: any) =>
-        `- ${item.description}: \n\tMentions: ${item.total_mentioned} \n\tPositive: ${item.positive} (${((item.positive / item.total_mentioned) * 100).toFixed(1)}%) \n\tNegative: ${item.negative} (${((item.negative / item.total_mentioned) * 100).toFixed(1)}%) \n\tNeutral: ${item.neutral} (${((item.neutral / item.total_mentioned) * 100).toFixed(1)}%)`,
+        `- ${item.description}: Mentions: ${item.total_mentioned}, Positive: ${item.positive}, Negative: ${item.negative}`,
     )
-    .join('\n') || 'Not available.'
+    .join('\n') || 'N/A'
 }
 
-## Review_Breakdown:
+### Other Reviews (sample):
 ${
   property.other_reviews
-    ?.slice(0, 24)
-    .map(
-      (item: any, index: number) =>
-        `Review ${index + 1} \n\tDate: ${item.user_review.date} \n\tScore: ${item.user_review.rating.score}/${item.user_review.rating.max_score} \n\tReview: ${item.user_review.comment} \n\tSource: ${item.source}`,
-    )
-    .join('\n\n') || 'Not available.'
-}`;
+    ?.slice(0, 5)
+    .map((item: any) => `- ${item.user_review.comment}`)
+    .join('\n') || 'N/A'
+}
+---
+`,
+  )
+  .join('\n')}
+`;
 
   try {
-    const { text: summary } = await generateText({
+    const { text: summariesJson } = await generateText({
       model: myProvider.languageModel('gemini-2.5-flash'),
       prompt: reviewContent,
     });
-    return { ...property, reviews_summary: summary };
+
+    // Extract JSON from the response
+    const jsonString = summariesJson.match(/\[[\s\S]*\]/)?.[0];
+    if (!jsonString) {
+      console.error(
+        'Failed to extract JSON array from batch summary response:',
+        summariesJson,
+      );
+      throw new Error('Could not parse JSON array from response');
+    }
+
+    const summaries = JSON.parse(jsonString) as string[];
+
+    if (summaries.length !== properties.length) {
+      console.error(
+        `Batch summary count mismatch. Expected ${properties.length}, got ${summaries.length}`,
+      );
+      // Fallback to avoid crashing
+      return properties.map(p => ({
+        ...p,
+        reviews_summary: 'Could not summarize reviews.',
+      }));
+    }
+
+    // Add summaries to each property
+    return properties.map((property, index) => ({
+      ...property,
+      reviews_summary: summaries[index] || 'Could not summarize reviews.',
+    }));
   } catch (error) {
-    console.error(`Failed to summarize reviews for ${property.name}:`, error);
-    return { ...property, reviews_summary: 'Could not summarize reviews.' };
+    console.error(`Failed to summarize reviews in batch:`, error);
+    // Fallback: return properties without summaries
+    return properties.map(p => ({
+      ...p,
+      reviews_summary: 'Could not summarize reviews.',
+    }));
   }
 }
 
@@ -492,9 +529,9 @@ export const googleHotels = ({ userId }: { userId: string }) =>
             limitedProperties.map(getPropertyDetails),
           );
 
-          stream.update('Summarizing reviews...');
-          const summarizedProperties = await Promise.all(
-            detailedProperties.map(summarizeReviews),
+          stream.update('Summarizing reviews in a single batch...');
+          const summarizedProperties = await summarizeAllReviewsInBatch(
+            detailedProperties,
           );
 
           stream.update('Processing and formatting results...');
