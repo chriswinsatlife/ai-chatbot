@@ -9,7 +9,7 @@ import { getJson } from 'serpapi';
 import { myProvider } from '../providers';
 
 // Use provided API keys directly
-const SERPAPI_API_KEY = '4c964694f77ae45f7e16a8cf0d202e54108a368e82ab5ce0566bc2b53d54e8fe';
+const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY!;
 
 interface GoogleHotelsProps {
   userId: string;
