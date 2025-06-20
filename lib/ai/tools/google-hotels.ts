@@ -163,8 +163,6 @@ ${query}
       adults: payload.adults || 1,
       children: payload.children || 0,
       rating: '8', // from n8n
-      currency: 'USD', // Allow global search with USD currency
-      hl: 'en', // English language but no geographic restriction
     };
 
     if (payload.vacation_rentals) {
