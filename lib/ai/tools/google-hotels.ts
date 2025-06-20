@@ -3,17 +3,9 @@ import { tool, generateText } from 'ai';
 import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getJson } from 'serpapi';
 import { openai } from '@ai-sdk/openai';
 
-// SerpAPI configuration
-const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
-
-if (!SERPAPI_API_KEY) {
-  throw new Error('SERPAPI_API_KEY environment variable is required');
-}
-
-console.log('[GoogleHotels] Tool initialized');
+console.log('[GoogleHotels] Tool file loaded.');
 
 interface GoogleHotelsProps {
   userId: string;
@@ -198,47 +190,62 @@ ${query}
 }
 
 async function searchGoogleHotels(searchParams: any): Promise<any> {
+  const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
+  if (!SERPAPI_API_KEY) {
+    throw new Error('FATAL: SERPAPI_API_KEY environment variable is not set.');
+  }
+
+  const url = new URL('https://serpapi.com/search.json');
+  url.searchParams.append('engine', 'google_hotels');
+  url.searchParams.append('api_key', SERPAPI_API_KEY);
+
+  for (const key in searchParams) {
+    if (searchParams[key] !== undefined && searchParams[key] !== null) {
+      url.searchParams.append(key, searchParams[key] as string);
+    }
+  }
+
   console.log(
-    `[GoogleHotels] Making SerpAPI call with params:`,
-    JSON.stringify(searchParams, null, 2),
+    `[GoogleHotels] Making DIRECT HTTP request to SerpAPI: ${url
+      .toString()
+      .replace(SERPAPI_API_KEY, '***REDACTED***')}`,
   );
 
-  const serpApiParams = {
-    ...searchParams,
-    api_key: SERPAPI_API_KEY,
-  };
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(
+      `[GoogleHotels] SerpAPI request failed with status ${response.status}:`,
+      errorBody,
+    );
+    throw new Error(
+      `SerpAPI request failed with status ${response.status}: ${response.statusText}`,
+    );
+  }
+  const result = await response.json();
 
   console.log(
-    `[GoogleHotels] Full SerpAPI params including API key:`,
-    JSON.stringify({ ...serpApiParams, api_key: '***REDACTED***' }, null, 2),
-  );
-
-  const result = await getJson('google_hotels', serpApiParams);
-
-  console.log(
-    `[GoogleHotels] SerpAPI response metadata:`,
+    `[GoogleHotels] SerpAPI direct response metadata:`,
     JSON.stringify(result.search_metadata, null, 2),
   );
   console.log(
-    `[GoogleHotels] SerpAPI response search parameters:`,
+    `[GoogleHotels] SerpAPI direct response search parameters:`,
     JSON.stringify(result.search_parameters, null, 2),
   );
 
-  if (result.properties && result.properties.length > 0) {
-    console.log(
-      `[GoogleHotels] First 3 properties found:`,
-      result.properties.slice(0, 3).map((p: any) => ({
-        name: p.name,
-        address: p.address,
-        link: p.link,
-      })),
-    );
+  if (result.error) {
+    console.error('[GoogleHotels] SerpAPI returned an error:', result.error);
+    throw new Error(result.error);
   }
 
   return result;
 }
 
 async function getPropertyDetails(property: any): Promise<any> {
+  const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
+  if (!SERPAPI_API_KEY) {
+    throw new Error('FATAL: SERPAPI_API_KEY environment variable is not set.');
+  }
   // SerpAPI call #2: Get property details using serpapi_property_details_link (matching n8n workflow exactly)
   if (property.serpapi_property_details_link) {
     try {
@@ -249,33 +256,43 @@ async function getPropertyDetails(property: any): Promise<any> {
       // Make direct HTTP request to the SerpAPI details link with API key
       const detailsUrl = `${property.serpapi_property_details_link}&api_key=${SERPAPI_API_KEY}`;
 
+      console.log(
+        `[GoogleHotels] Making DIRECT property details request to: ${detailsUrl.replace(
+          SERPAPI_API_KEY,
+          '***REDACTED***',
+        )}`,
+      );
+
       const response = await fetch(detailsUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const detailsResults = await response.json();
+      const detailsResult = await response.json();
+      if (detailsResult.error) {
+        console.error(
+          '[GoogleHotels] SerpAPI property details returned an error:',
+          detailsResult.error,
+        );
+        return null; // Don't throw, just skip this property
+      }
+
       console.log(
         `[GoogleHotels] Successfully fetched details for ${property.name}`,
       );
-
-      // Merge the details with the original property (matching n8n workflow)
+      // Per n8n workflow, nest details under a 'details' key
       return {
         ...property,
-        ...detailsResults,
+        details: detailsResult,
       };
     } catch (error) {
       console.error(
         `[GoogleHotels] Failed to get details for ${property.name}:`,
         error,
       );
-      return property;
+      return null; // Return null if details fetch fails, to not break the entire flow
     }
   }
-
-  console.log(
-    `[GoogleHotels] No serpapi_property_details_link found for ${property.name}, using original data`,
-  );
   return property;
 }
 
