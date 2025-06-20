@@ -63,12 +63,21 @@ const searchQuerySchema = {
 };
 
 async function getUserContext(userId: string): Promise<string | null> {
-  const [userProfile] = await db
-    .select({ context_hotels: userProfiles.context_hotels })
-    .from(userProfiles)
-    .where(eq(userProfiles.clerkId, userId));
+  try {
+    console.log(`[GoogleHotels] Fetching context for userId: ${userId}`);
+    const [userProfile] = await db
+      .select({ context_hotels: userProfiles.context_hotels })
+      .from(userProfiles)
+      .where(eq(userProfiles.clerkId, userId));
 
-  return userProfile?.context_hotels ?? null;
+    console.log(`[GoogleHotels] User profile found:`, userProfile ? 'Yes' : 'No');
+    console.log(`[GoogleHotels] Context hotels:`, userProfile?.context_hotels || 'None');
+    
+    return userProfile?.context_hotels ?? null;
+  } catch (error) {
+    console.error(`[GoogleHotels] Error fetching user context:`, error);
+    return null;
+  }
 }
 
 async function parseSearchQuery(
@@ -146,11 +155,12 @@ ${query}
       searchParams.property_types = '12,13,15,17,18,19,20,21,22,23,24'; // from n8n
     }
 
+    console.log(`[GoogleHotels] Parsed search params:`, searchParams);
     return searchParams;
   } catch (error) {
     console.error('Error parsing search query:', error);
     // Fallback to basic parsing
-    return {
+    const fallbackParams = {
       q: query,
       check_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       check_out_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -160,6 +170,8 @@ ${query}
       hotel_class: '3,4,5',
       property_types: '12,13,15,17,18,19,20,21,22,23,24'
     };
+    console.log(`[GoogleHotels] Using fallback params:`, fallbackParams);
+    return fallbackParams;
   }
 }
 
@@ -472,8 +484,11 @@ export const googleHotels = ({ userId }: { userId: string }) =>
 
       (async () => {
         try {
+          console.log(`[GoogleHotels] Starting search for query: "${query}" with userId: ${userId}`);
+          
           stream.update('Fetching user preferences...');
           const context = await getUserContext(userId);
+          console.log(`[GoogleHotels] Retrieved context:`, context);
 
           stream.update('Parsing your request...');
           const searchParams = await parseSearchQuery(query, context);
@@ -485,12 +500,15 @@ export const googleHotels = ({ userId }: { userId: string }) =>
             !hotelsResponse.properties ||
             hotelsResponse.properties.length === 0
           ) {
+            console.log(`[GoogleHotels] No properties found in response`);
             stream.done({
               result:
                 'No hotels found matching your search criteria. Please try adjusting your search parameters.',
             });
             return;
           }
+
+          console.log(`[GoogleHotels] Found ${hotelsResponse.properties.length} properties`);
 
           // Limit to 40 properties (matching n8n workflow)
           const limitedProperties = hotelsResponse.properties?.slice(0, 40) || [];
@@ -516,6 +534,7 @@ export const googleHotels = ({ userId }: { userId: string }) =>
             query,
           );
 
+          console.log(`[GoogleHotels] Search completed successfully`);
           stream.done({ result: finalResult });
         } catch (error) {
           console.error('Error in Google Hotels tool:', error);
