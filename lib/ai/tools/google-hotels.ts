@@ -131,7 +131,9 @@ ${query}
 * [Website](https://hotels.cloudbeds.com/en/reservation/full_link) - $1,627.81
 	* Pay online, non-refundable
 
-See more options or change the search details on **[🏨 Google Hotels](${searchResults.search_metadata.google_hotels_url})**.
+See more options or change the search details on **[🏨 Google Hotels](${
+    searchResults.search_metadata.google_hotels_url
+  })**.
 </example_markdown_output>`;
 
   const formattingModel = genAI.getGenerativeModel({

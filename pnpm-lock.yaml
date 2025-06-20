@@ -81,6 +81,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.35.3
         version: 6.36.6
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -315,6 +318,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      serpapi:
+        specifier: ^2.1.0
+        version: 2.1.0
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
@@ -1241,6 +1247,10 @@ packages:
 
   '@google/genai@0.7.0':
     resolution: {integrity: sha512-r+Fwj/emnXZN5R+4JCxDXboY4AGTmTn7+Wnori5dgyJiStP0P82f9YYL0CVsCnDIumNY2i0UIcZ1zGZdtHJ34w==}
+    engines: {node: '>=18.0.0'}
+
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
     engines: {node: '>=18.0.0'}
 
   '@humanfs/core@0.19.1':
@@ -5423,6 +5433,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  serpapi@2.1.0:
+    resolution: {integrity: sha512-iXydBe7yLEwSYlHUNG9QRlZfFxtbxpQ0kZf7HDmRC4vbzhUzBW9rU+zOw2K6bcA2D6/qTCXivtCB/hnZJFZNTQ==}
+
   server-only@0.0.1:
     resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
 
@@ -6793,6 +6806,8 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
+
+  '@google/generative-ai@0.24.1': {}
 
   '@humanfs/core@0.19.1': {}
 
@@ -11547,6 +11562,8 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.7.1: {}
+
+  serpapi@2.1.0: {}
 
   server-only@0.0.1: {}
 
