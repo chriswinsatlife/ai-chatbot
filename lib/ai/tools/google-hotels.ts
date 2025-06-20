@@ -468,11 +468,22 @@ See more options or change the search details on **[🏨 Google Hotels](${search
 </example_markdown_output>`;
 
   try {
+    console.log(
+      `[GoogleHotels] Starting AI formatting with ${properties.length} properties`,
+    );
+    console.log(
+      `[GoogleHotels] Accommodation options data length: ${accommodationOptions.length} characters`,
+    );
+
     // Use Gemini 2.5 Flash like the n8n workflow
     const { text: formattedText } = await generateText({
       model: openai('gpt-4.1'), // Using GPT-4.1 since Gemini was causing issues
       prompt: formattingPrompt,
     });
+
+    console.log(
+      `[GoogleHotels] AI formatting completed successfully. Result length: ${formattedText.length} characters`,
+    );
 
     // Create the final response exactly like the n8n workflow Response node
     const googleHotelsUrl =
@@ -497,7 +508,10 @@ ${googleHotelsUrl}`;
 
     return finalResponse;
   } catch (error) {
-    console.error('Error formatting results with AI:', error);
+    console.error('[GoogleHotels] Error formatting results with AI:', error);
+    console.error(
+      '[GoogleHotels] Falling back to simple formatting. This means NO booking links or real data will be shown.',
+    );
     // Fallback to simple formatting if AI fails
     const simpleFormat = properties
       .map(
