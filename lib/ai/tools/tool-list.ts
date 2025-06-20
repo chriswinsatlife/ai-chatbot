@@ -4,6 +4,7 @@ import { updateDocument } from './update-document';
 import { requestSuggestions } from './request-suggestions';
 import { getN8nTools } from './n8n-mcp'; // Assuming n8n-mcp might move or stay
 import { googleHotels } from './google-hotels';
+import { getUserContext } from './get-user-context';
 
 // Interface for the arguments needed by tool factories
 interface ToolArguments {
@@ -33,6 +34,7 @@ export async function assembleTools({
     updateDocument: updateDocument({ userId, dataStream }),
     requestSuggestions: requestSuggestions({ userId, dataStream }),
     googleHotels: googleHotels({ userId }),
+    getUserContext: getUserContext({ userId }),
   };
 
   // Combine standard and n8n tools

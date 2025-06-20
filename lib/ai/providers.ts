@@ -1,12 +1,10 @@
-import {
-  customProvider,
-} from 'ai';
+import { customProvider } from 'ai';
 // import { groq } from '@ai-sdk/groq';
 // import { xai } from '@ai-sdk/xai';
 import { google } from '@ai-sdk/google';
 // import { fal } from '@ai-sdk/fal';
 import { togetherai } from '@ai-sdk/togetherai';
-import { openai, } from '@ai-sdk/openai';
+import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 // import { fireworks } from '@ai-sdk/fireworks';
 // import { replicate } from '@ai-sdk/replicate';
@@ -34,17 +32,17 @@ export const myProvider = isTestEnvironment
       languageModels: {
         'chat-model': openai('gpt-4.1'),
         'chat-model-reasoning': openai('o3'),
-        // 'chat-model': google('gemini-2.5-flash-preview-04-17'),
+        // 'chat-model': google('gemini-2.5-flash'),
         // 'chat-model-reasoning': wrapLanguageModel({
         //   model: fireworks('accounts/fireworks/models/deepseek-r1'),
         //   middleware: extractReasoningMiddleware({ tagName: 'think' }),
         // }),
-        'title-model': google('gemini-2.5-flash-preview-04-17'),
-        'artifact-model': google('gemini-2.5-pro-preview-03-25'),
+        'title-model': google('gemini-2.5-flash'),
+        'artifact-model': google('gemini-2.5-pro'),
         'deepseek-v3': togetherai('deepseek-ai/DeepSeek-V3'),
         'deepseek-r1': togetherai('deepseek-ai/DeepSeek-R1'),
-        'gemini-2.5-flash': google('gemini-2.5-flash-preview-04-17'),
-        'gemini-2.5-pro': google('gemini-2.5-pro-preview-05-06'),
+        'gemini-2.5-flash': google('gemini-2.5-flash'),
+        'gemini-2.5-pro': google('gemini-2.5-pro'),
         'o4-mini': openai('o4-mini'),
         'claude-sonnet-4': anthropic('claude-sonnet-4-20250514'),
         'claude-opus-4': anthropic('claude-opus-4-20250514'),
