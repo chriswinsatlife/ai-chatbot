@@ -1,15 +1,19 @@
 import { createStreamableValue } from 'ai/rsc';
 import { z } from 'zod';
 import { tool, generateText } from 'ai';
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db/queries';
-import { userProfiles } from '@/lib/db/schema';
+import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getJson } from 'serpapi';
 import { myProvider } from '../providers';
+import { openai } from '@ai-sdk/openai';
 
-// Use provided API keys directly
-const SERPAPI_API_KEY = '4c964694f77ae45f7e16a8cf0d202e54108a368e82ab5ce0566bc2b53d54e8fe';
+// SerpAPI configuration
+const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
+
+if (!SERPAPI_API_KEY) {
+  throw new Error('SERPAPI_API_KEY environment variable is required');
+}
 
 interface GoogleHotelsProps {
   userId: string;
@@ -17,59 +21,66 @@ interface GoogleHotelsProps {
 
 // JSON Schema for structured output parsing (matching n8n workflow)
 const searchQuerySchema = {
-  $schema: "http://json-schema.org/draft-07/schema#",
-  type: "object",
+  $schema: 'http://json-schema.org/draft-07/schema#',
+  type: 'object',
   properties: {
     payload: {
-      type: "object",
+      type: 'object',
       properties: {
         q: {
-          type: "string",
-          description: "Search query, required field"
+          type: 'string',
+          description: 'Search query, required field',
         },
         check_in_date: {
-          type: "string",
-          format: "date",
-          description: "Check-in date, required field"
+          type: 'string',
+          format: 'date',
+          description: 'Check-in date, required field',
         },
         check_out_date: {
-          type: "string",
-          format: "date",
-          description: "Check-out date, required field"
+          type: 'string',
+          format: 'date',
+          description: 'Check-out date, required field',
         },
         vacation_rentals: {
-          type: "boolean",
-          description: "Indicates if vacation rentals are included. Should be omitted if searching for hotels or when the user does not explicitly ask for vacation rentals",
-          default: null
+          type: 'boolean',
+          description:
+            'Indicates if vacation rentals are included. Should be omitted if searching for hotels or when the user does not explicitly ask for vacation rentals',
+          default: null,
         },
         adults: {
-          type: "number",
-          default: 2
+          type: 'number',
+          default: 2,
         },
         children: {
-          type: "number",
-          default: 0
-        }
+          type: 'number',
+          default: 0,
+        },
       },
-      required: ["q", "check_in_date", "check_out_date"],
-      additionalProperties: false
-    }
+      required: ['q', 'check_in_date', 'check_out_date'],
+      additionalProperties: false,
+    },
   },
-  required: ["payload"],
-  additionalProperties: false
+  required: ['payload'],
+  additionalProperties: false,
 };
 
 async function getUserContext(userId: string): Promise<string | null> {
   try {
     console.log(`[GoogleHotels] Fetching context for userId: ${userId}`);
     const [userProfile] = await db
-      .select({ context_hotels: userProfiles.context_hotels })
-      .from(userProfiles)
-      .where(eq(userProfiles.clerkId, userId));
+      .select({ context_hotels: schema.userProfiles.context_hotels })
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.id, userId));
 
-    console.log(`[GoogleHotels] User profile found:`, userProfile ? 'Yes' : 'No');
-    console.log(`[GoogleHotels] Context hotels:`, userProfile?.context_hotels || 'None');
-    
+    console.log(
+      `[GoogleHotels] User profile found:`,
+      userProfile ? 'Yes' : 'No',
+    );
+    console.log(
+      `[GoogleHotels] Context hotels:`,
+      userProfile?.context_hotels || 'None',
+    );
+
     return userProfile?.context_hotels ?? null;
   } catch (error) {
     console.error(`[GoogleHotels] Error fetching user context:`, error);
@@ -114,12 +125,12 @@ ${query}
       .replace(/```json/g, '')
       .replace(/```/g, '')
       .trim();
-    
+
     // Try to parse the JSON and validate against schema
-    let parsed;
+    let parsed: { payload?: any } | null = null;
     try {
       parsed = JSON.parse(jsonString);
-    } catch (e) {
+    } catch (parseError) {
       // If direct parsing fails, try to extract JSON from the response
       const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -130,8 +141,8 @@ ${query}
     }
 
     // Extract payload from the parsed response (matching n8n schema)
-    const payload = parsed.payload || parsed;
-    
+    const payload = parsed?.payload || parsed;
+
     // Add fixed parameters from n8n workflow
     const searchParams: any = {
       q: payload.q.replace(/, /g, ' '),
@@ -157,13 +168,17 @@ ${query}
     // Fallback to basic parsing
     const fallbackParams = {
       q: query,
-      check_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      check_out_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      check_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0],
+      check_out_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0],
       adults: 1,
       children: 0,
       rating: '8',
       hotel_class: '3,4,5',
-      property_types: '12,13,15,17,18,19,20,21,22,23,24'
+      property_types: '12,13,15,17,18,19,20,21,22,23,24',
     };
     console.log(`[GoogleHotels] Using fallback params:`, fallbackParams);
     return fallbackParams;
@@ -242,25 +257,39 @@ ${
 // Function to trim fields (matching n8n workflow)
 function trimFields(property: any): any {
   const trimmed = { ...property };
-  
+
   // Remove fields that should be excluded (matching n8n workflow)
   const excludeFields = [
-    'message', 'index', 'logprobs', 'finish_reason', 'rate_per_night', 
-    'total_rate', 'deal', 'deal_description', 'nearby_places', 'images', 
-    'serpapi_property_details_link', 'search_metadata', 'search_parameters', 
-    'reviews_breakdown', 'other_reviews', 'prices', 'featured_prices'
+    'message',
+    'index',
+    'logprobs',
+    'finish_reason',
+    'rate_per_night',
+    'total_rate',
+    'deal',
+    'deal_description',
+    'nearby_places',
+    'images',
+    'serpapi_property_details_link',
+    'search_metadata',
+    'search_parameters',
+    'reviews_breakdown',
+    'other_reviews',
+    'prices',
+    'featured_prices',
   ];
-  
-  excludeFields.forEach(field => {
+
+  excludeFields.forEach((field) => {
     delete trimmed[field];
   });
 
   // Add computed fields (matching n8n workflow)
-  trimmed.reviews_summary = property.reviews_summary || 'No review data available.';
+  trimmed.reviews_summary =
+    property.reviews_summary || 'No review data available.';
   trimmed.rate_per_night_lowest_usd = property.rate_per_night?.extracted_lowest;
   trimmed.total_rate_lowest_usd = property.total_rate?.extracted_lowest;
   trimmed.link = property.link;
-  trimmed.google_maps_link = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.name, property.address].join("+"))}`;
+  trimmed.google_maps_link = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.name, property.address].join('+'))}`;
 
   // Clean up featured_prices (matching n8n workflow)
   if (property.featured_prices) {
@@ -268,30 +297,38 @@ function trimFields(property: any): any {
       ...f,
       logo: undefined,
       remarks: undefined,
-      rate_per_night: f.rate_per_night ? {
-        ...f.rate_per_night,
-        before_taxes_fees: undefined,
-        extracted_before_taxes_fees: undefined
-      } : undefined,
-      total_rate: f.total_rate ? {
-        ...f.total_rate,
-        before_taxes_fees: undefined,
-        extracted_before_taxes_fees: undefined
-      } : undefined,
+      rate_per_night: f.rate_per_night
+        ? {
+            ...f.rate_per_night,
+            before_taxes_fees: undefined,
+            extracted_before_taxes_fees: undefined,
+          }
+        : undefined,
+      total_rate: f.total_rate
+        ? {
+            ...f.total_rate,
+            before_taxes_fees: undefined,
+            extracted_before_taxes_fees: undefined,
+          }
+        : undefined,
       rooms: (f.rooms || []).map((r: any) => ({
         ...r,
         images: undefined,
-        rate_per_night: r.rate_per_night ? {
-          ...r.rate_per_night,
-          before_taxes_fees: undefined,
-          extracted_before_taxes_fees: undefined
-        } : undefined,
-        total_rate: r.total_rate ? {
-          ...r.total_rate,
-          before_taxes_fees: undefined,
-          extracted_before_taxes_fees: undefined
-        } : undefined
-      }))
+        rate_per_night: r.rate_per_night
+          ? {
+              ...r.rate_per_night,
+              before_taxes_fees: undefined,
+              extracted_before_taxes_fees: undefined,
+            }
+          : undefined,
+        total_rate: r.total_rate
+          ? {
+              ...r.total_rate,
+              before_taxes_fees: undefined,
+              extracted_before_taxes_fees: undefined,
+            }
+          : undefined,
+      })),
     }));
   }
 
@@ -301,27 +338,39 @@ function trimFields(property: any): any {
       const currentItem = { ...item };
       if (currentItem && typeof currentItem === 'object') {
         // Remove top-level fields
-        delete currentItem.logo;
-        delete currentItem.original_rate_per_night;
+        currentItem.logo = undefined;
+        currentItem.original_rate_per_night = undefined;
 
         // Remove nested field: total_rate.before_taxes_fees
-        if (currentItem.total_rate && typeof currentItem.total_rate === 'object') {
-          delete currentItem.total_rate.before_taxes_fees;
+        if (
+          currentItem.total_rate &&
+          typeof currentItem.total_rate === 'object'
+        ) {
+          currentItem.total_rate.before_taxes_fees = undefined;
         }
-        
+
         // Remove nested field: rate_per_night.before_taxes_fees
-        if (currentItem.rate_per_night && typeof currentItem.rate_per_night === 'object') {
-          delete currentItem.rate_per_night.before_taxes_fees;
+        if (
+          currentItem.rate_per_night &&
+          typeof currentItem.rate_per_night === 'object'
+        ) {
+          currentItem.rate_per_night.before_taxes_fees = undefined;
         }
 
         // Remove nested field: total_rate.extracted_before_taxes_fees
-        if (currentItem.total_rate && typeof currentItem.total_rate === 'object') {
-          delete currentItem.total_rate.extracted_before_taxes_fees;
+        if (
+          currentItem.total_rate &&
+          typeof currentItem.total_rate === 'object'
+        ) {
+          currentItem.total_rate.extracted_before_taxes_fees = undefined;
         }
 
         // Remove nested field: rate_per_night.extracted_before_taxes_fees
-        if (currentItem.rate_per_night && typeof currentItem.rate_per_night === 'object') {
-          delete currentItem.rate_per_night.extracted_before_taxes_fees;
+        if (
+          currentItem.rate_per_night &&
+          typeof currentItem.rate_per_night === 'object'
+        ) {
+          currentItem.rate_per_night.extracted_before_taxes_fees = undefined;
         }
       }
       return currentItem;
@@ -350,27 +399,29 @@ Please organize the following accommodation options in a proper markdown output.
 </instructions>
 
 <accommodation_options (${properties.length}_options)>
-${properties.map((OptionItem, index) => {
-  function flatten(obj: any, prefix = '') {
-    return Object.entries(obj).reduce((acc: any, [k, v]) => {
-      const pre = prefix.length ? prefix + '.' : ''; 
-      if (v && typeof v === 'object' && !Array.isArray(v)) {
-        Object.assign(acc, flatten(v, pre + k));
-      } else {
-        acc[pre + k] = v;
-      }
-      return acc;
-    }, {});
-  }
+${properties
+  .map((OptionItem, index) => {
+    function flatten(obj: any, prefix = '') {
+      return Object.entries(obj).reduce((acc: any, [k, v]) => {
+        const pre = prefix.length ? `${prefix}.` : '';
+        if (v && typeof v === 'object' && !Array.isArray(v)) {
+          Object.assign(acc, flatten(v, pre + k));
+        } else {
+          acc[pre + k] = v;
+        }
+        return acc;
+      }, {});
+    }
 
-  const flattenedOption = flatten(OptionItem); 
+    const flattenedOption = flatten(OptionItem);
 
-  const formattedProperties = Object.entries(flattenedOption)
-    .map(([k, v]) => `\n\t${k}: ${v}`)
-    .join('');
+    const formattedProperties = Object.entries(flattenedOption)
+      .map(([k, v]) => `\n\t${k}: ${v}`)
+      .join('');
 
-  return `- ## Option ${index + 1} of ${properties.length}${formattedProperties}`;
-}).join('\n\n')}
+    return `- ## Option ${index + 1} of ${properties.length}${formattedProperties}`;
+  })
+  .join('\n\n')}
 </accommodation_options>
 
 <Client_Context>
@@ -403,10 +454,13 @@ See more options or change the search details on **[🏨 Google Hotels](${search
       model: myProvider.languageModel('gemini-2.5-flash'),
       prompt: formattingPrompt,
     });
-    
+
     // Add the final response structure (matching n8n workflow)
     const finalResponse = `# Accommodation Options
-${formattedText.split('\n').filter(item => item.slice(0,3) !== '```').join('\n')}
+${formattedText
+  .split('\n')
+  .filter((item) => item.slice(0, 3) !== '```')
+  .join('\n')}
 
 ## Accommodation Preferences
 ${context || 'No context provided.'}
@@ -423,12 +477,24 @@ ${searchResults.search_metadata?.prettify_html_file || searchResults.search_meta
     // Fallback to basic formatting
     return `# Accommodation Options
 
-${properties.map(p => `## ${p.name}
+${properties
+  .map(
+    (p) => `## ${p.name}
 * 🌐 [Website](${p.link})
 * 📍[${p.address}](${p.google_maps_link})
 * 💬 ${p.reviews_summary}
 * ⭐ ${p.overall_rating} - ${p.rating_word} (${p.reviews} reviews)
-${p.prices?.slice(0, 2).map((price: any) => `* [${price.source}](${price.link}) - ${price.rate_per_night?.extracted_lowest ? `$${price.rate_per_night.extracted_lowest}/night` : 'Price not available'}`).join('\n') || 'No pricing found.'}`).join('\n\n')}
+${
+  p.prices
+    ?.slice(0, 2)
+    .map(
+      (price: any) =>
+        `* [${price.source}](${price.link}) - ${price.rate_per_night?.extracted_lowest ? `$${price.rate_per_night.extracted_lowest}/night` : 'Price not available'}`,
+    )
+    .join('\n') || 'No pricing found.'
+}`,
+  )
+  .join('\n\n')}
 
 ## Accommodation Preferences
 ${context || 'No context provided.'}
@@ -441,83 +507,112 @@ ${searchResults.search_metadata?.prettify_html_file || searchResults.search_meta
   }
 }
 
-export const googleHotels = ({ userId }: { userId: string }) =>
+export const googleHotels = ({ userId }: GoogleHotelsProps) =>
   tool({
-    description:
-      'Search for hotels and vacation rentals using Google Hotels via SerpAPI. This tool helps find accommodations with detailed information including prices, reviews, amenities, and availability.',
+    description: `Use the "Google Hotels Tool" to search for and recommend hotel accommodations and vacation rentals based on user preferences and travel requirements.
+
+This tool provides comprehensive hotel search capabilities by:
+- **Smart Query Parsing**: Converts natural language requests into structured search parameters
+- **Personalized Recommendations**: Uses user's hotel preferences and booking history for tailored suggestions  
+- **Comprehensive Results**: Returns detailed property information including pricing, reviews, amenities, and booking links
+- **Flexible Search**: Supports both traditional hotels and vacation rentals/Airbnb-style properties
+- **Review Intelligence**: AI-powered summarization of guest reviews and ratings analysis
+- **Multiple Booking Options**: Provides pricing and booking links across different platforms
+
+The tool intelligently handles:
+- Date parsing and validation (defaults to sensible date ranges if not specified)
+- Guest count optimization based on user preferences or explicit requirements
+- Property type selection (hotels vs vacation rentals) based on user request
+- Location and amenity preferences from user's travel history
+- Budget considerations from past booking patterns
+
+Use this tool when users ask about:
+- Hotel or accommodation recommendations
+- Vacation rental searches  
+- Travel planning with accommodation needs
+- Comparing hotel options for specific destinations
+- Getting detailed information about specific properties`,
+
     parameters: z.object({
       query: z
         .string()
         .describe(
-          'The search query for hotels or vacation rentals, including location and any specific requirements',
+          'The user\'s hotel search request (e.g., "luxury hotel in Paris next month", "beachfront villa in Bali for 4 people")',
         ),
     }),
-    execute: async ({ query }: { query: string }) => {
-      const stream = createStreamableValue();
 
-      (async () => {
-        try {
-          console.log(`[GoogleHotels] Starting search for query: "${query}" with userId: ${userId}`);
-          
-          stream.update('Fetching user preferences...');
-          const context = await getUserContext(userId);
-          console.log(`[GoogleHotels] Retrieved context:`, context);
+    execute: async ({ query }) => {
+      try {
+        console.log(
+          `[GoogleHotels] Executing search for userId: ${userId}, query: "${query}"`,
+        );
 
-          stream.update('Parsing your request...');
-          const searchParams = await parseSearchQuery(query, context);
+        // Step 1: Get user's hotel context for personalization
+        const userProfile = await db.query.userProfiles.findFirst({
+          columns: {
+            id: true,
+            full_name: true,
+            context_hotels: true,
+          },
+          where: eq(schema.userProfiles.id, userId),
+        });
 
-          stream.update('Searching for hotels...');
-          const hotelsResponse = await searchGoogleHotels(searchParams);
-
-          if (
-            !hotelsResponse.properties ||
-            hotelsResponse.properties.length === 0
-          ) {
-            console.log(`[GoogleHotels] No properties found in response`);
-            stream.done({
-              result:
-                'No hotels found matching your search criteria. Please try adjusting your search parameters.',
-            });
-            return;
-          }
-
-          console.log(`[GoogleHotels] Found ${hotelsResponse.properties.length} properties`);
-
-          // Limit to 40 properties (matching n8n workflow)
-          const limitedProperties = hotelsResponse.properties?.slice(0, 40) || [];
-
-          stream.update('Fetching detailed information for top results...');
-          const detailedProperties = await Promise.all(
-            limitedProperties.map(getPropertyDetails),
+        if (!userProfile) {
+          console.error(
+            `[GoogleHotels] User profile not found for userId: ${userId}`,
           );
-
-          stream.update('Summarizing reviews...');
-          const summarizedProperties = await Promise.all(
-            detailedProperties.map(summarizeReviews),
-          );
-
-          stream.update('Processing and formatting results...');
-          // Apply field trimming (matching n8n workflow)
-          const trimmedProperties = summarizedProperties.map(trimFields);
-
-          const finalResult = await formatHotelResults(
-            trimmedProperties,
-            hotelsResponse,
-            context,
-            query,
-          );
-
-          console.log(`[GoogleHotels] Search completed successfully`);
-          stream.done({ result: finalResult });
-        } catch (error) {
-          console.error('Error in Google Hotels tool:', error);
-          stream.done({
-            result:
-              'I encountered an error while searching for hotels. Please try again later.',
-          });
+          return { error: 'User profile not found' };
         }
-      })();
 
-      return stream.value;
+        const userContext =
+          userProfile.context_hotels || 'No hotel preferences available.';
+        console.log(
+          `[GoogleHotels] Found user profile for: ${userProfile.full_name || 'Unknown'}`,
+        );
+
+        // Step 2: Parse user query into structured search parameters (exact n8n logic)
+        const searchParams = await parseSearchQuery(query, userContext);
+        console.log(`[GoogleHotels] Parsed search parameters:`, searchParams);
+
+        // Step 3: Execute SerpAPI Google Hotels search
+        const searchResults = await searchGoogleHotels(searchParams);
+        console.log(
+          `[GoogleHotels] Found ${searchResults.properties?.length || 0} properties`,
+        );
+
+        if (
+          !searchResults.properties ||
+          searchResults.properties.length === 0
+        ) {
+          return {
+            response: `No hotels found for "${query}". Try adjusting your search criteria or dates.`,
+            searchParams,
+          };
+        }
+
+        // Step 4: Process and format results (following n8n workflow)
+        const formattedResults = await formatHotelResults(
+          searchResults.properties.slice(0, 10), // Limit to top 10 like n8n
+          searchResults,
+          userContext,
+          query,
+        );
+
+        console.log(
+          `[GoogleHotels] Returning formatted results (estimated ${Math.floor(formattedResults.length / 4)} tokens)`,
+        );
+
+        return {
+          response: formattedResults,
+          searchParams,
+          resultsCount: searchResults.properties.length,
+        };
+      } catch (error) {
+        console.error('[GoogleHotels] Error during execution:', error);
+        return {
+          error: 'Failed to search hotels',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
     },
   });
