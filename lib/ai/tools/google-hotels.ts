@@ -110,7 +110,7 @@ ${query}
 
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash-preview-0514',
+      model: 'gemini-2.5-flash-preview-04-17',
     });
     const result = await model.generateContent(prompt);
     const response = result.response;
@@ -183,27 +183,8 @@ async function searchGoogleHotels(searchParams: any): Promise<any> {
 }
 
 async function getPropertyDetails(property: any): Promise<any> {
-  if (!property.serpapi_property_details_link) {
-    return property; // Return original property if no details link
-  }
-  try {
-    console.log(
-      `Fetching details for ${property.name} from ${property.serpapi_property_details_link}`,
-    );
-    const details = await getJson(
-      property.serpapi_property_details_link.split('?')[0], // Use the base URL
-      {
-        api_key: SERPAPI_API_KEY,
-        ...Object.fromEntries(
-          new URL(property.serpapi_property_details_link).searchParams,
-        ),
-      },
-    );
-    return { ...property, ...details };
-  } catch (error) {
-    console.error(`Failed to fetch details for ${property.name}:`, error);
-    return property; // Return original property on error
-  }
+  // Skip property details fetching to avoid SerpAPI errors
+  return property;
 }
 
 async function summarizeReviews(property: any): Promise<any> {
@@ -253,7 +234,7 @@ ${
 
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash-preview-0514',
+      model: 'gemini-2.5-flash-preview-04-17',
     });
     const result = await model.generateContent(reviewContent);
     const summary = result.response.text();
@@ -425,7 +406,7 @@ See more options or change the search details on **[🏨 Google Hotels](${search
 
   try {
     const formattingModel = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp', // Using the same model as n8n workflow
+      model: 'gemini-2.5-flash-preview-04-17',
     });
     const result = await formattingModel.generateContent(formattingPrompt);
     const response = result.response;
