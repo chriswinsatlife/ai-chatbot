@@ -1,4 +1,3 @@
-import { createStreamableValue } from 'ai/rsc';
 import { z } from 'zod';
 import { tool, generateText } from 'ai';
 import { db } from '@/lib/db/queries';
