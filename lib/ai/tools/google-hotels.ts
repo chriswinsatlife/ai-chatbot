@@ -143,10 +143,22 @@ ${query}
     const payload = parsed?.payload || parsed;
 
     // Add fixed parameters from n8n workflow
+    // Ensure dates are always provided with fallbacks
+    const checkInDate =
+      payload.check_in_date ||
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
+    const checkOutDate =
+      payload.check_out_date ||
+      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
+
     const searchParams: any = {
       q: payload.q.replace(/, /g, ' '),
-      check_in_date: payload.check_in_date,
-      check_out_date: payload.check_out_date,
+      check_in_date: checkInDate,
+      check_out_date: checkOutDate,
       adults: payload.adults || 1,
       children: payload.children || 0,
       rating: '8', // from n8n
