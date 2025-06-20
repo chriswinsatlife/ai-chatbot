@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { tool, generateText } from 'ai';
+import { tool, generateText, generateObject } from 'ai';
 import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -11,50 +11,28 @@ interface GoogleHotelsProps {
   userId: string;
 }
 
-// JSON Schema for structured output parsing (matching n8n workflow)
-const searchQuerySchema = {
-  $schema: 'http://json-schema.org/draft-07/schema#',
-  type: 'object',
-  properties: {
-    payload: {
-      type: 'object',
-      properties: {
-        q: {
-          type: 'string',
-          description: 'Search query, required field',
-        },
-        check_in_date: {
-          type: 'string',
-          format: 'date',
-          description: 'Check-in date, required field',
-        },
-        check_out_date: {
-          type: 'string',
-          format: 'date',
-          description: 'Check-out date, required field',
-        },
-        vacation_rentals: {
-          type: 'boolean',
-          description:
-            'Indicates if vacation rentals are included. Should be omitted if searching for hotels or when the user does not explicitly ask for vacation rentals',
-          default: null,
-        },
-        adults: {
-          type: 'number',
-          default: 2,
-        },
-        children: {
-          type: 'number',
-          default: 0,
-        },
-      },
-      required: ['q', 'check_in_date', 'check_out_date'],
-      additionalProperties: false,
-    },
-  },
-  required: ['payload'],
-  additionalProperties: false,
-};
+// Zod schema for the payload, matching the n8n workflow's structured output.
+const searchQueryPayloadSchema = z.object({
+  q: z.string().describe('Search query, required field'),
+  check_in_date: z
+    .string()
+    .describe('Check-in date in YYYY-MM-DD format, required field'),
+  check_out_date: z
+    .string()
+    .describe('Check-out date in YYYY-MM-DD format, required field'),
+  vacation_rentals: z
+    .boolean()
+    .describe(
+      'Set to true for vacation rentals, false for hotels. This is a required field.',
+    ),
+  adults: z.number().optional().default(1).describe('Number of adults'),
+  children: z.number().optional().default(0).describe('Number of children'),
+});
+
+// The final schema that wraps the payload, exactly as in the n8n workflow.
+const searchQuerySchema = z.object({
+  payload: searchQueryPayloadSchema,
+});
 
 async function getUserContext(userId: string): Promise<string | null> {
   try {
@@ -83,7 +61,9 @@ async function getUserContext(userId: string): Promise<string | null> {
 async function parseSearchQuery(
   query: string,
   context: string | null,
-): Promise<any> {
+): Promise<z.infer<typeof searchQuerySchema>> {
+  const currentDate = new Date().toString();
+  // This prompt is copied EXACTLY from the working n8n workflow.
   const prompt = `Based on the user query, please output the search JSON. Leave a value null or blank if it is unclear.
 
 - If the user specifies vacation rentals or Airbnb-type listings, set "vacation_rentals" to true, otherwise assume hotels and set it to false.
@@ -91,13 +71,16 @@ async function parseSearchQuery(
 - Check in and check out date is *required* (default to check in date as 1 week from today if not provided in the query).
 - Assume the client is traveling alone as one adult unless otherwise specified in the context or query.
 - The <Client_Context> is general historic information and should be used when details are not specified in the <User_Query>.
+     - For example, if the user does not specify the bed size, we may use context from <Client_Context> to fill this in.
 - The <User_Query> overrides on any conflict, since it is a current request from the user.
+     - For example, if the context says "the client typically travels alone" and "always prefers hotels" but the <User_Query> requests an Airbnb or villa which sleeps 4, the JSON you output should conform to the <User_Query>.
 - The <Current_DateTime> should be used for interpreting queries like "next month" or "next week".
-- The "q" is a query that would be entered into a search box on hotels.google.com.
+- The "q" is a query that would be entered into a search box on hotels.google.com. You can use anything that you would use in a regular Google Hotels search. Avoid crazy search syntax or very long q strings.
 - Output JSON according to the schema.
+</Guidelines>
 
 <Current_DateTime>
-${new Date().toISOString()}
+${currentDate}
 </Current_DateTime>
 
 <Client_Context>
@@ -108,108 +91,66 @@ ${context || 'No context provided.'}
 ${query}
 </User_Query>`;
 
-  try {
-    const { text } = await generateText({
-      model: openai('gpt-4o-mini'),
-      prompt: prompt,
-    });
-    const jsonString = text
-      .replace(/```json/g, '')
-      .replace(/```/g, '')
-      .trim();
+  console.log(
+    `[GoogleHotels] Parsing search query with gpt-4-turbo and exact n8n prompt.`,
+  );
 
-    // Try to parse the JSON and validate against schema
-    let parsed: { payload?: any } | null = null;
-    try {
-      parsed = JSON.parse(jsonString);
-    } catch (parseError) {
-      // If direct parsing fails, try to extract JSON from the response
-      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('Could not parse JSON from response');
-      }
-    }
+  // We now expect the object to match the wrapped searchQuerySchema
+  const { object: parsedResult } = await generateObject({
+    model: openai('gpt-4-turbo'),
+    schema: searchQuerySchema,
+    prompt,
+  });
 
-    // Extract payload from the parsed response (matching n8n schema)
-    const payload = parsed?.payload || parsed;
-
-    // Add fixed parameters from n8n workflow
-    // Ensure dates are always provided with fallbacks
-    const checkInDate =
-      payload.check_in_date ||
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0];
-    const checkOutDate =
-      payload.check_out_date ||
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0];
-
-    const searchParams: any = {
-      q: payload.q.replace(/, /g, ' '),
-      check_in_date: checkInDate,
-      check_out_date: checkOutDate,
-      adults: payload.adults || 1,
-      children: payload.children || 0,
-      rating: '8', // from n8n
-    };
-
-    if (payload.vacation_rentals) {
-      searchParams.vacation_rentals = true;
-      searchParams.property_types = '1,2,3,4,5,6,7,8,10,11,21'; // from n8n
-    } else {
-      searchParams.hotel_class = '3,4,5'; // from n8n
-      searchParams.property_types = '12,13,15,17,18,19,20,21,22,23,24'; // from n8n
-    }
-
-    console.log(`[GoogleHotels] Parsed search params:`, searchParams);
-    return searchParams;
-  } catch (error) {
-    console.error('Error parsing search query:', error);
-    // Fallback to basic parsing
-    const fallbackParams = {
-      q: query,
-      check_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0],
-      check_out_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0],
-      adults: 1,
-      children: 0,
-      rating: '8',
-      hotel_class: '3,4,5',
-      property_types: '12,13,15,17,18,19,20,21,22,23,24',
-    };
-    console.log(`[GoogleHotels] Using fallback params:`, fallbackParams);
-    return fallbackParams;
-  }
+  console.log('[GoogleHotels] AI produced object:', parsedResult);
+  return parsedResult;
 }
 
-async function searchGoogleHotels(searchParams: any): Promise<any> {
-  const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
-  if (!SERPAPI_API_KEY) {
-    throw new Error('FATAL: SERPAPI_API_KEY environment variable is not set.');
+async function searchGoogleHotels(
+  searchParams: z.infer<typeof searchQuerySchema>,
+) {
+  if (!process.env.SERPAPI_API_KEY) {
+    throw new Error('SERPAPI_API_KEY is not set');
   }
+
+  // Destructure from the payload object, as per the corrected schema
+  const { payload } = searchParams;
+  console.log('[GoogleHotels] Constructing search from payload:', payload);
+
+  // This logic is copied EXACTLY from the n8n workflow's HTTP Request node.
+  const finalParams: { [key: string]: any } = {
+    engine: 'google_hotels',
+    api_key: process.env.SERPAPI_API_KEY,
+    q: payload.q.replace(/, /g, ' '),
+    check_in_date: payload.check_in_date,
+    check_out_date: payload.check_out_date,
+    adults: payload.adults,
+    children: payload.children,
+    rating: '8', // Hardcoded as per the n8n workflow
+  };
+
+  // This is the CRITICAL conditional logic from the n8n workflow.
+  if (payload.vacation_rentals) {
+    console.log('[GoogleHotels] Search Type: Vacation Rentals');
+    finalParams.vacation_rentals = true;
+    finalParams.property_types = '1,2,3,4,5,6,7,8,10,11,21'; // VR property types
+  } else {
+    console.log('[GoogleHotels] Search Type: Hotels');
+    finalParams.hotel_class = '3,4,5'; // Hotel classes
+    finalParams.property_types = '12,13,15,17,18,19,20,21,22,23,24'; // Hotel property types
+  }
+
+  // Remove undefined values so they aren't included in the URL
+  Object.keys(finalParams).forEach(
+    (key) =>
+      (finalParams[key] === undefined || finalParams[key] === null) &&
+      delete finalParams[key],
+  );
 
   const url = new URL('https://serpapi.com/search.json');
-  url.searchParams.append('engine', 'google_hotels');
-  url.searchParams.append('api_key', SERPAPI_API_KEY);
+  url.search = new URLSearchParams(finalParams).toString();
 
-  for (const key in searchParams) {
-    if (searchParams[key] !== undefined && searchParams[key] !== null) {
-      url.searchParams.append(key, searchParams[key] as string);
-    }
-  }
-
-  console.log(
-    `[GoogleHotels] Making DIRECT HTTP request to SerpAPI: ${url
-      .toString()
-      .replace(SERPAPI_API_KEY, '***REDACTED***')}`,
-  );
+  console.log(`[GoogleHotels] Making DIRECT HTTP request to SerpAPI: ${url}`);
 
   const response = await fetch(url.toString());
   if (!response.ok) {
@@ -673,8 +614,18 @@ Sometimes the tool will return extremely long links, in which case you must shor
         );
 
         // Step 2: Parse user query into structured search parameters (exact n8n logic)
-        const searchParams = await parseSearchQuery(query, userContext);
-        console.log(`[GoogleHotels] Parsed search parameters:`, searchParams);
+        const userContextForPrompt = `The user's name is ${
+          userProfile.full_name
+        }. Their email is null. Other details: ${JSON.stringify(
+          userProfile.context_hotels,
+        )}`;
+
+        const searchParams = await parseSearchQuery(
+          query,
+          userContextForPrompt,
+        );
+
+        console.log('[GoogleHotels] Parsed search parameters:', searchParams);
 
         // Step 3: Execute SerpAPI Google Hotels search
         const searchResults = await searchGoogleHotels(searchParams);
