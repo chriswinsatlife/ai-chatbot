@@ -40,7 +40,6 @@ import MemoryClient from 'mem0ai';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { z } from 'zod';
 import {
-  postRequestBodySchema,
   Message as ClientMessage,
   Part as ClientPart,
 } from '@/lib/types';
