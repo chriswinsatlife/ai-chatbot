@@ -315,6 +315,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      serpapi:
+        specifier: ^2.1.0
+        version: 2.1.0
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
@@ -5422,6 +5425,9 @@ packages:
     resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
     engines: {node: '>=10'}
     hasBin: true
+
+  serpapi@2.1.0:
+    resolution: {integrity: sha512-iXydBe7yLEwSYlHUNG9QRlZfFxtbxpQ0kZf7HDmRC4vbzhUzBW9rU+zOw2K6bcA2D6/qTCXivtCB/hnZJFZNTQ==}
 
   server-only@0.0.1:
     resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
@@ -11547,6 +11553,8 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.7.1: {}
+
+  serpapi@2.1.0: {}
 
   server-only@0.0.1: {}
 
