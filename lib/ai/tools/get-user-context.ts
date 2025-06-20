@@ -1,9 +1,8 @@
-import { tool } from 'ai';
+import { tool, generateText } from 'ai';
 import { z } from 'zod';
 import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateText } from 'ai';
 import { myProvider } from '@/lib/ai/providers';
 
 interface GetUserContextProps {
