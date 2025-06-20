@@ -1,0 +1,320 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 0, 0, 0;
+        --background-end-rgb: 0, 0, 0;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 3.9%;
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 90%;
+        --input: 240 5.9% 90%;
+        --ring: 240 10% 3.9%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.5rem;
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+        --color-1: 0 100% 63%;
+        --color-2: 270 100% 63%;
+        --color-3: 210 100% 63%;
+        --color-4: 195 100% 63%;
+        --color-5: 90 100% 63%;
+    }
+    .dark {
+        --background: 240 10% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 240 10% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 10% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 5.9% 10%;
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 240 3.7% 15.9%;
+        --muted-foreground: 240 5% 64.9%;
+        --accent: 240 3.7% 15.9%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 3.7% 15.9%;
+        --input: 240 3.7% 15.9%;
+        --ring: 240 4.9% 83.9%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
+        --sidebar-background: 240 5.9% 7.5%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 224.3 76.3% 48%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+.skeleton {
+    * {
+        pointer-events: none !important;
+    }
+
+    *[class^="text-"] {
+        color: transparent;
+        @apply rounded-md bg-foreground/20 select-none animate-pulse;
+    }
+
+    .skeleton-bg {
+        @apply bg-foreground/10;
+    }
+
+    .skeleton-div {
+        @apply bg-foreground/20 animate-pulse;
+    }
+}
+
+.ProseMirror {
+    outline: none;
+}
+
+.cm-editor,
+.cm-gutters {
+    @apply bg-background dark:bg-zinc-800 outline-none selection:bg-zinc-900 !important;
+}
+
+.ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.ͼo.cm-selectionBackground,
+.ͼo.cm-content::selection {
+    @apply bg-zinc-200 dark:bg-zinc-900 !important;
+}
+
+.cm-activeLine,
+.cm-activeLineGutter {
+    @apply bg-transparent !important;
+}
+
+.cm-activeLine {
+    @apply rounded-r-sm !important;
+}
+
+.cm-lineNumbers {
+    @apply min-w-7;
+}
+
+.cm-foldGutter {
+    @apply min-w-3;
+}
+
+.cm-lineNumbers .cm-activeLineGutter {
+    @apply rounded-l-sm !important;
+}
+
+.suggestion-highlight {
+    @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
+}
+
+/* === START: Tiptap Editor Styling Overrides (Added by Assistant) === */
+/* Based on examples/tiptap-react-simple-editor/src/index.scss */
+/* Apply to ensure basic Markdown formatting is visible */
+
+/* Ensure the editor itself allows content to fill space and has padding */
+/* Note: Current tiptap-editor.tsx does not wrap EditorContent, */
+/* so these styles apply directly to the generated .tiptap.ProseMirror div */
+.tiptap.ProseMirror {
+  min-height: 150px; /* Give it some minimum space */
+  width: 100%;
+  padding: 0.75rem 1rem; /* Use rem for padding consistent with example */
+  outline: none; /* Remove default focus outline if desired */
+}
+
+/* Basic Block Spacing */
+.tiptap.ProseMirror > * + * {
+  margin-top: 0.75em; /* Add space between block elements like paragraphs, headings, lists */
+}
+
+/* Headings */
+.tiptap.ProseMirror h1,
+.tiptap.ProseMirror h2,
+.tiptap.ProseMirror h3,
+.tiptap.ProseMirror h4,
+.tiptap.ProseMirror h5,
+.tiptap.ProseMirror h6 {
+  line-height: 1.1;
+  font-weight: 600; /* Ensure headings are bold */
+  margin-top: 1.25em; /* Add more space above headings */
+  margin-bottom: 0.5em; /* Add some space below headings */
+}
+/* Use Tailwind's font sizes for consistency if possible, otherwise use em */
+.tiptap.ProseMirror h1 { font-size: 2em; } /* text-3xl or text-4xl */
+.tiptap.ProseMirror h2 { font-size: 1.5em; } /* text-2xl */
+.tiptap.ProseMirror h3 { font-size: 1.25em; } /* text-xl */
+.tiptap.ProseMirror h4 { font-size: 1em; } /* text-lg */
+.tiptap.ProseMirror h5 { font-size: 0.875em; } /* text-base */
+.tiptap.ProseMirror h6 { font-size: 0.85em; } /* text-sm */
+
+
+/* Bold */
+.tiptap.ProseMirror strong,
+.tiptap.ProseMirror b {
+  font-weight: bold;
+}
+
+/* Italic */
+.tiptap.ProseMirror em,
+.tiptap.ProseMirror i {
+  font-style: italic;
+}
+
+/* Inline Code */
+.tiptap.ProseMirror code {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  padding: 0.1em 0.3em;
+  border-radius: 0.25em;
+  font-family: var(--font-geist-mono); /* Use mono font if defined */
+  font-size: 0.9em;
+}
+
+/* Code Blocks */
+.tiptap.ProseMirror pre {
+  background: hsl(var(--secondary)); /* Use a theme color */
+  color: hsl(var(--secondary-foreground));
+  font-family: var(--font-geist-mono); /* Use mono font */
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.tiptap.ProseMirror pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.85em;
+}
+
+/* Lists */
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  padding: 0 1.5rem; /* Add indentation */
+  margin: 0.75em 0;
+}
+.tiptap.ProseMirror ul {
+  list-style-type: disc; /* Ensure bullets are visible */
+}
+.tiptap.ProseMirror ol {
+  list-style-type: decimal; /* Ensure numbers are visible */
+}
+.tiptap.ProseMirror li > p {
+ margin-top: 0.25em; /* Reduce space within list items */
+ margin-bottom: 0.25em;
+}
+.tiptap.ProseMirror li > ol,
+.tiptap.ProseMirror li > ul {
+ margin-top: 0.4em; /* Space for nested lists */
+ margin-bottom: 0.4em;
+}
+
+
+/* Blockquotes */
+.tiptap.ProseMirror blockquote {
+  border-left: 3px solid hsl(var(--border));
+  margin-left: 0; /* Remove default browser margin */
+  margin-right: 0;
+  padding-left: 1rem;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Horizontal Rule */
+.tiptap.ProseMirror hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 2rem 0;
+}
+
+/* Placeholder */
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+/* Task Lists (Basic Styling - Requires TaskList/TaskItem extensions) */
+.tiptap.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+.tiptap.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: center;
+}
+.tiptap.ProseMirror ul[data-type="taskList"] li > label {
+  margin-right: 0.5rem;
+  user-select: none;
+}
+.tiptap.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+.tiptap.ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
+  cursor: pointer;
+}
+
+
+/* === END: Tiptap Editor Styling Overrides (Added by Assistant) === */
