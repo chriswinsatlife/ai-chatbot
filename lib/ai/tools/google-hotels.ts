@@ -3,6 +3,7 @@ import { tool, generateText } from 'ai';
 import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getJson } from 'serpapi';
 import { openai } from '@ai-sdk/openai';
 
 // SerpAPI configuration
@@ -117,7 +118,7 @@ ${query}
 
   try {
     const { text } = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4o-mini'),
       prompt: prompt,
     });
     const jsonString = text
@@ -197,39 +198,50 @@ ${query}
 }
 
 async function searchGoogleHotels(searchParams: any): Promise<any> {
-  // Use direct HTTP request to SerpAPI like n8n workflow
-  const url = new URL('https://serpapi.com/search');
-  url.searchParams.append('engine', 'google_hotels');
-  url.searchParams.append('api_key', SERPAPI_API_KEY as string);
-
-  // Add language and currency but NOT geographic location restriction
-  url.searchParams.append('hl', 'en'); // English language
-  url.searchParams.append('currency', 'USD'); // USD currency
-  // DO NOT add 'gl=us' as that restricts results to US locations only
-
-  // Add all search parameters
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value !== null && value !== undefined) {
-      url.searchParams.append(key, String(value));
-    }
+  return getJson('google_hotels', {
+    ...searchParams,
+    api_key: SERPAPI_API_KEY,
   });
-
-  console.log(`[GoogleHotels] Fetching URL: ${url.toString()}`);
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[GoogleHotels] SerpAPI error response: ${errorText}`);
-    throw new Error(`SerpAPI returned ${response.status}: ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log(`[GoogleHotels] SerpAPI response received.`);
-  return data;
 }
 
 async function getPropertyDetails(property: any): Promise<any> {
-  // Skip property details fetching to avoid SerpAPI errors
+  // SerpAPI call #2: Get property details using serpapi_property_details_link (matching n8n workflow exactly)
+  if (property.serpapi_property_details_link) {
+    try {
+      console.log(
+        `[GoogleHotels] Getting details for ${property.name} using serpapi_property_details_link`,
+      );
+
+      // Make direct HTTP request to the SerpAPI details link with API key
+      const detailsUrl = `${property.serpapi_property_details_link}&api_key=${SERPAPI_API_KEY}`;
+
+      const response = await fetch(detailsUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const detailsResults = await response.json();
+      console.log(
+        `[GoogleHotels] Successfully fetched details for ${property.name}`,
+      );
+
+      // Merge the details with the original property (matching n8n workflow)
+      return {
+        ...property,
+        ...detailsResults,
+      };
+    } catch (error) {
+      console.error(
+        `[GoogleHotels] Failed to get details for ${property.name}:`,
+        error,
+      );
+      return property;
+    }
+  }
+
+  console.log(
+    `[GoogleHotels] No serpapi_property_details_link found for ${property.name}, using original data`,
+  );
   return property;
 }
 
@@ -280,7 +292,7 @@ ${
 
   try {
     const { text: summary } = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4o-mini'),
       prompt: reviewContent,
     });
     return { ...property, reviews_summary: summary };
@@ -452,16 +464,15 @@ async function formatHotelResults(
 
   // Use the exact prompt from the n8n workflow
   const formattingPrompt = `<instructions>
-Please organize the following accommodation options in a proper markdown output.
+Please organize the following accommodation options in a proper markdown output. 
 
 - Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-formatted output.
-- Output markdown following the example provided.
+- Output markdown following the example provided. 
 - Ensure to include the full booking URLs and NEVER truncate them. You only need to include 1-2 booking options per property--not all.
 - Make sure to take into account the client's accommodation preferences when ordering the hotels, which are given below.
 - You may omit options from the output if they do not fit the client's preferences. You do not have to output every single one.
 - You can and should re-arrange the order based on what you believe the client would select themselves for this particular trip.
 - Where there is a conflict between <Client_Context> and the <Current_Client_Accommodation_Search_Query>, the <Current_Client_Accommodation_Search_Query> should always win. This goes for inclusion/exclusion of results, sort order, etc.
-
 </instructions>
 
 <accommodation_options (${properties.length}_options)>
@@ -501,9 +512,9 @@ See more options or change the search details on **[🏨 Google Hotels](${search
       `[GoogleHotels] Accommodation options data length: ${accommodationOptions.length} characters`,
     );
 
-    // Use GPT-4o like the working version
+    // Use Gemini 2.5 Flash like the n8n workflow
     const { text: formattedText } = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4o'), // Using GPT-4.1 since Gemini was causing issues
       prompt: formattingPrompt,
     });
 
@@ -570,6 +581,7 @@ export const googleHotels = ({ userId }: GoogleHotelsProps) =>
 This tool will return the user's preferences and best available accommodation options in markdown, which you can use in your subsequent message to them. Aim to output 4-12 options.
 
 CRITICAL: The user CANNOT see the results of the tool--only you can. You must put information from the tool's output in your message to the user if you want them to see it. You must ALWAYS output the accommodation links with your accommodation options, and truncate these links.
+
 Sometimes the tool will return extremely long links, in which case you must shorten them when you output these to the user (e.g. [M4YA Hotel Canggu](https://hotels.google.com/tons-of-parameters-and-hundreds-of-characters). Always output the Google Hotels search link at the end of your recommended accommodations, so the user can continue the search on the website or view the full results.`,
 
     parameters: z.object({
@@ -629,9 +641,25 @@ Sometimes the tool will return extremely long links, in which case you must shor
           };
         }
 
-        // Step 4: Process and format results (following n8n workflow)
+        // Step 4: Split Out, Limit, Get Details, Summarize Reviews, Merge, Trim, Aggregate (following n8n workflow)
+        const limitedProperties = searchResults.properties.slice(0, 10); // Limit step
+
+        // Get property details and summarize reviews for each property
+        const processedProperties = await Promise.all(
+          limitedProperties.map(async (property: any) => {
+            // SerpAPI call #2: Get property details
+            const detailedProperty = await getPropertyDetails(property);
+            // LLM call #2: Summarize reviews
+            const reviewSummarizedProperty =
+              await summarizeReviews(detailedProperty);
+            // Trim fields
+            return trimFields(reviewSummarizedProperty);
+          }),
+        );
+
+        // Step 5: Format results (LLM call #3)
         const formattedResults = await formatHotelResults(
-          searchResults.properties.slice(0, 10), // Limit to top 10 like n8n
+          processedProperties,
           searchResults,
           userContext,
           query,
