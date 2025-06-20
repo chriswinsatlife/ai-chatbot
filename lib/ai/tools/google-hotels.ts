@@ -391,65 +391,100 @@ function trimFields(property: any): any {
   return trimmed;
 }
 
-function formatHotelResults(
+async function formatHotelResults(
   properties: any[],
   searchResults: any,
   context: string | null,
   query: string,
-): string {
+): Promise<string> {
   console.log(
     `[GoogleHotels] Formatting ${properties.length} properties with context: ${context ? 'Available' : 'None'}`,
   );
 
-  // Build the actual hotel listings from the API data
-  const hotelListings = properties
+  // Flatten each property's data exactly like the n8n workflow does
+  function flatten(obj: any, prefix = ''): any {
+    return Object.entries(obj).reduce((acc: any, [k, v]) => {
+      const pre = prefix.length ? `${prefix}.` : '';
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        Object.assign(acc, flatten(v, pre + k));
+      } else {
+        acc[pre + k] = v;
+      }
+      return acc;
+    }, {});
+  }
+
+  // Create the accommodation options data structure exactly like n8n
+  const accommodationOptions = properties
     .map((property, index) => {
-      const name = property.name || 'Hotel name not available';
-      const address = property.address || 'Address not available';
-      const rating = property.overall_rating || 'No rating';
-      const ratingWord = property.rating_word || '';
-      const reviews = property.reviews || 0;
-      const link = property.link || '#';
-
-      // Build pricing information from actual API data
-      const pricingLines: string[] = [];
-      if (property.prices && property.prices.length > 0) {
-        property.prices.slice(0, 3).forEach((price: any) => {
-          const source = price.source || 'Unknown';
-          const priceLink = price.link || '#';
-          const rate = price.rate_per_night?.extracted_lowest
-            ? `$${price.rate_per_night.extracted_lowest}/night`
-            : price.total_rate?.extracted_lowest
-              ? `$${price.total_rate.extracted_lowest} total`
-              : 'Price on request';
-          pricingLines.push(`* [${source}](${priceLink}) - ${rate}`);
-        });
-      }
-
-      if (pricingLines.length === 0) {
-        pricingLines.push('* Pricing information not available');
-      }
-
-      return `## ${name}
-* 🌐 [Website](${link})
-* 📍 ${address}
-* ⭐ ${rating} - ${ratingWord} (${reviews} reviews)
-${pricingLines.join('\n')}`;
+      const flattenedOption = flatten(property);
+      const formattedProperties = Object.entries(flattenedOption)
+        .map(([k, v]) => `\n\t${k}: ${v}`)
+        .join('');
+      return `- ## Option ${index + 1} of ${properties.length}${formattedProperties}`;
     })
     .join('\n\n');
 
-  // Get the actual Google Hotels search URL from the API response
-  const googleHotelsUrl =
-    searchResults.search_metadata?.google_hotels_url ||
-    searchResults.search_metadata?.prettify_html_file ||
-    'https://www.google.com/travel/hotels';
+  // Use the exact prompt from the n8n workflow
+  const formattingPrompt = `<instructions>
+Please organize the following accommodation options in a proper markdown output. 
 
-  // Format the final response exactly like the n8n workflow
-  return `# Accommodation Options
+- Include all the relevant details like property names, amenities, costs, data points from reviews, etc into a markdown-formatted output.
+- Output markdown following the example provided. 
+- Ensure to include the full booking URLs and NEVER truncate them. You only need to include 1-2 booking options per property--not all.
+- Make sure to take into account the client's accommodation preferences when ordering the hotels, which are given below.
+- You may omit options from the output if they do not fit the client's preferences. You do not have to output every single one.
+- You can and should re-arrange the order based on what you believe the client would select themselves for this particular trip.
+- Where there is a conflict between <Client_Context> and the <Current_Client_Accommodation_Search_Query>, the <Current_Client_Accommodation_Search_Query> should always win. This goes for inclusion/exclusion of results, sort order, etc.
+</instructions>
 
-${hotelListings}
+<accommodation_options (${properties.length}_options)>
+${accommodationOptions}
+</accommodation_options>
 
-See more options or change the search details on **[🏨 Google Hotels](${googleHotelsUrl})**.
+<Client_Context>
+${context || 'No context provided.'}
+</Client_Context>
+
+<Current_Client_Accommodation_Search_Query>
+${query}
+</Current_Client_Accommodation_Search_Query>
+
+<example_markdown_output>
+## The Aviator Bali
+* 🌐 [Website](https://aviatorbali.com)
+* 📍[Jalan Tegal Sari Gang Kana No.59, Tibubeneng, Kuta Utara, 80363 Canggu](https://www.google.com/maps/search/?api=1&query=name+address)
+* 🏨 Key Amenities Summary
+* 💬 Reviews Summary
+* ⭐ 9.2 - Exceptional (74 reviews) 
+* [Booking.com](https://www.booking.com/full_link) - $1,826
+	* Pay online, non-refundable
+* [Agoda](https://www.agoda.com/aviator-bali/hotel/full_link) - $2,735
+	* Pay at check-in, free cancellation until 11:59PM on July 13, 2025
+* [Website](https://hotels.cloudbeds.com/en/reservation/full_link) - $1,627.81
+	* Pay online, non-refundable
+
+See more options or change the search details on **[🏨 Google Hotels](${searchResults.search_metadata?.prettify_html_file || searchResults.search_metadata?.google_hotels_url || 'https://www.google.com/travel/hotels'})**.
+</example_markdown_output>`;
+
+  try {
+    // Use Gemini 2.5 Flash like the n8n workflow
+    const { text: formattedText } = await generateText({
+      model: openai('gpt-4.1'), // Using GPT-4.1 since Gemini was causing issues
+      prompt: formattingPrompt,
+    });
+
+    // Create the final response exactly like the n8n workflow Response node
+    const googleHotelsUrl =
+      searchResults.search_metadata?.prettify_html_file ||
+      searchResults.search_metadata?.google_hotels_url ||
+      'https://www.google.com/travel/hotels';
+
+    const finalResponse = `# Accommodation Options
+${formattedText
+  .split('\n')
+  .filter((item) => item.slice(0, 3) !== '```')
+  .join('\n')}
 
 ## Accommodation Preferences
 ${context || 'No context provided.'}
@@ -459,33 +494,44 @@ ${query}
 
 ## Google Hotels Search Results Page
 ${googleHotelsUrl}`;
+
+    return finalResponse;
+  } catch (error) {
+    console.error('Error formatting results with AI:', error);
+    // Fallback to simple formatting if AI fails
+    const simpleFormat = properties
+      .map(
+        (p, i) => `## ${i + 1}. ${p.name}
+* 📍 ${p.address}
+* ⭐ ${p.overall_rating} - ${p.rating_word} (${p.reviews} reviews)
+* 🌐 [View Details](${p.link})`,
+      )
+      .join('\n\n');
+
+    return `# Accommodation Options
+
+${simpleFormat}
+
+## Accommodation Preferences
+${context || 'No context provided.'}
+
+## Current Accommodation Query
+${query}
+
+## Google Hotels Search Results Page
+${searchResults.search_metadata?.prettify_html_file || searchResults.search_metadata?.google_hotels_url || 'https://www.google.com/travel/hotels'}`;
+  }
 }
 
 export const googleHotels = ({ userId }: GoogleHotelsProps) =>
   tool({
-    description: `Use the "Google Hotels Tool" to search for and recommend hotel accommodations and vacation rentals based on user preferences and travel requirements.
+    description: `The Google Hotels tool is used to search for hotels and vacation rentals. This tool contains information about the user's accommodation preferences, so you generally do not need to ask the user about their preferences like hotel vs Airbnb, preferred brands, desired amenities, pricing, etc. You will need only the trip-specific information like the date of the trip, destination, required amenities, etc. Simply call the tool with a detailed query on their itinerary. Note the tool will only output links to book hotels and vacation rentals, and accommodation cannot be booked directly by the AI. YOU CANNOT BOOK ACCOMMODATIONS. DO NOT CLAIM YOU CAN BOOK ACCOMMODATIONS ON THE USER'S BEHALF.
 
-This tool provides comprehensive hotel search capabilities by:
-- **Smart Query Parsing**: Converts natural language requests into structured search parameters
-- **Personalized Recommendations**: Uses user's hotel preferences and booking history for tailored suggestions  
-- **Comprehensive Results**: Returns detailed property information including pricing, reviews, amenities, and booking links
-- **Flexible Search**: Supports both traditional hotels and vacation rentals/Airbnb-style properties
-- **Review Intelligence**: AI-powered summarization of guest reviews and ratings analysis
-- **Multiple Booking Options**: Provides pricing and booking links across different platforms
+This tool will return the user's preferences and best available accommodation options in markdown, which you can use in your subsequent message to them. Aim to output 4-12 options.
 
-The tool intelligently handles:
-- Date parsing and validation (defaults to sensible date ranges if not specified)
-- Guest count optimization based on user preferences or explicit requirements
-- Property type selection (hotels vs vacation rentals) based on user request
-- Location and amenity preferences from user's travel history
-- Budget considerations from past booking patterns
+CRITICAL: The user CANNOT see the results of the tool--only you can. You must put information from the tool's output in your message to the user if you want them to see it. You must ALWAYS output the accommodation links with your accommodation options, and truncate these links.
 
-Use this tool when users ask about:
-- Hotel or accommodation recommendations
-- Vacation rental searches  
-- Travel planning with accommodation needs
-- Comparing hotel options for specific destinations
-- Getting detailed information about specific properties`,
+Sometimes the tool will return extremely long links, in which case you must shorten them when you output these to the user (e.g. [M4YA Hotel Canggu](https://hotels.google.com/tons-of-parameters-and-hundreds-of-characters). Always output the Google Hotels search link at the end of your recommended accommodations, so the user can continue the search on the website or view the full results.`,
 
     parameters: z.object({
       query: z
@@ -545,7 +591,7 @@ Use this tool when users ask about:
         }
 
         // Step 4: Process and format results (following n8n workflow)
-        const formattedResults = formatHotelResults(
+        const formattedResults = await formatHotelResults(
           searchResults.properties.slice(0, 10), // Limit to top 10 like n8n
           searchResults,
           userContext,
