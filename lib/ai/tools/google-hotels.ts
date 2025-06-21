@@ -4,6 +4,7 @@ import { db } from '@/lib/db/queries';
 import * as schema from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 
 console.log('[GoogleHotels] Tool file loaded.');
 
@@ -88,9 +89,7 @@ ${context || 'No context provided.'}
 ${query}
 </User_Query>`;
 
-  console.log(
-    `[GoogleHotels] Parsing search query with gpt-4.1-mini and exact n8n prompt.`,
-  );
+  console.log(`[GoogleHotels] Parsing search query.`);
 
   const { object: parsedResult } = await generateObject({
     model: openai('gpt-4.1-mini'),
@@ -281,7 +280,7 @@ ${
 
   try {
     const { text: summary } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: google('gemini-2.5-flash'),
       prompt: reviewContent,
     });
     return { ...property, reviews_summary: summary };
@@ -490,7 +489,7 @@ See more options or change the search details on **[🏨 Google Hotels](${google
   try {
     // Use Gemini 2.5 Flash like the n8n workflow
     const { text: formattedText } = await generateText({
-      model: openai('gpt-4o'), // Using GPT-4.1 since Gemini was causing issues
+      model: google('gemini-2.5-flash'),
       prompt: prompt,
     });
 
@@ -623,7 +622,7 @@ Sometimes the tool will return extremely long links, in which case you must shor
         }
 
         // Step 4: Split Out, Limit, Get Details, Summarize Reviews, Merge, Trim, Aggregate (following n8n workflow)
-        const limitedProperties = searchResults.properties.slice(0, 10); // Limit step
+        const limitedProperties = searchResults.properties.slice(0, 20); // Limit step
 
         // Get property details and summarize reviews for each property
         const processedProperties = await Promise.all(
