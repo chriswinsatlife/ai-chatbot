@@ -68,13 +68,14 @@ export function HotelProgress({ chatId }: HotelProgressProps) {
   useEffect(() => {
     if (!data) return;
 
-    // The `data` array can contain various object types from the stream.
-    // We search backwards to find the most recent event that is a valid hotel progress event.
-    const latestEvent = [...data].reverse().find(isHotelProgressEvent);
+    // This is the new, safer logic.
+    // 1. First, we filter the array to get *only* the hotel progress events.
+    const hotelProgressEvents = data.filter(isHotelProgressEvent);
 
-    if (latestEvent) {
-      // Because we used the `isHotelProgressEvent` type guard, TypeScript now knows
-      // that `latestEvent.content` is safe to access.
+    // 2. If we found any, we take the most recent one (the last one in the array).
+    if (hotelProgressEvents.length > 0) {
+      const latestEvent = hotelProgressEvents[hotelProgressEvents.length - 1];
+      // The compiler is now 100% certain that latestEvent is the correct type.
       setCurrentProgress(latestEvent.content);
     }
   }, [data]);
