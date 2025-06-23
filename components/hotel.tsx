@@ -24,20 +24,30 @@ const stageConfig = {
   formatting: { icon: Settings, color: 'text-primary' },
 };
 
-export function HotelProgress() {
-  const { data } = useChat();
+interface HotelProgressProps {
+  chatId: string;
+}
+
+export function HotelProgress({ chatId }: HotelProgressProps) {
+  const { data } = useChat({ id: chatId });
+  const [isClient, setIsClient] = useState(false);
 
   const [currentProgress, setCurrentProgress] = useState<HotelProgressContent>({
     stage: 'preferences',
     message: 'Getting your hotel preferences...',
   });
 
+  // Handle hydration
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // This robustly parses the data stream to find the latest progress event.
   useEffect(() => {
-    if (!data) return;
-
+    if (!data || !isClient) return;
     // Find the last valid 'hotel-progress' event in the stream.
-    const latestProgressContent = data.reduce((acc, item) => {
+    let latest: HotelProgressContent | null = null;
+    for (const item of data) {
       if (
         typeof item === 'object' &&
         item !== null &&
@@ -46,15 +56,11 @@ export function HotelProgress() {
         'content' in item &&
         typeof (item as any).content === 'object'
       ) {
-        return (item as any).content as HotelProgressContent;
+        latest = (item as any).content as HotelProgressContent;
       }
-      return acc;
-    }, null as HotelProgressContent | null);
-
-    if (latestProgressContent) {
-      setCurrentProgress(latestProgressContent);
     }
-  }, [data]);
+    if (latest) setCurrentProgress(latest);
+  }, [data, isClient]);
 
   const config = stageConfig[currentProgress.stage];
   const IconComponent = config.icon;
@@ -62,6 +68,30 @@ export function HotelProgress() {
     currentProgress.current && currentProgress.total
       ? (currentProgress.current / currentProgress.total) * 100
       : undefined;
+
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <Card className="w-full max-w-md mx-auto bg-card">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-accent">
+              <Settings className="size-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-sm text-card-foreground">
+                Getting your hotel preferences...
+              </h3>
+              <p className="text-xs text-muted-foreground mt-2">
+                This may take 5-15 seconds...
+              </p>
+            </div>
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto bg-card">

@@ -172,7 +172,7 @@ const PurePreviewMessage = ({
                       {toolName === 'getWeather' ? (
                         <Weather />
                       ) : toolName === 'googleHotels' ? (
-                        <HotelProgress />
+                        <HotelProgress chatId={chatId} />
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview isReadonly={isReadonly} args={args} />
                       ) : toolName === 'updateDocument' ? (
