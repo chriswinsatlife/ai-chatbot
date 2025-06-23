@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Hotel, MapPin, Star, FileText, Settings } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface HotelProgressData {
@@ -86,7 +85,12 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
             )}
             {progressPercentage !== undefined && (
               <div className="mt-2">
-                <Progress value={progressPercentage} className="h-2" />
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {currentProgress.current} of {currentProgress.total} hotels
                 </p>
