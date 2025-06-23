@@ -1,6 +1,5 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
 import { useEffect, useState } from 'react';
 import { Loader2, Hotel, MapPin, Star, FileText, Settings } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,22 +12,8 @@ interface HotelProgressData {
   destination?: string;
 }
 
-// Type guard to ensure we are only processing our custom hotel progress events
-function isHotelProgressEvent(
-  item: any
-): item is { type: 'hotel-progress'; content: HotelProgressData } {
-  return (
-    item &&
-    typeof item === 'object' &&
-    !Array.isArray(item) &&
-    item.type === 'hotel-progress' &&
-    item.content &&
-    typeof item.content === 'object'
-  );
-}
-
 interface HotelProgressProps {
-  chatId: string;
+  progressData?: HotelProgressData;
 }
 
 const stageConfig = {
@@ -58,27 +43,17 @@ const stageConfig = {
   },
 };
 
-export function HotelProgress({ chatId }: HotelProgressProps) {
-  const { data } = useChat({ id: chatId });
+export function HotelProgress({ progressData }: HotelProgressProps) {
   const [currentProgress, setCurrentProgress] = useState<HotelProgressData>({
     stage: 'preferences',
     message: 'Getting your hotel preferences...',
   });
 
   useEffect(() => {
-    if (!data) return;
-
-    const hotelProgressEvents = data.filter(isHotelProgressEvent);
-
-    if (hotelProgressEvents.length > 0) {
-      const latestEvent = hotelProgressEvents[hotelProgressEvents.length - 1];
-      
-      // This explicit check is the definitive fix for the build error.
-      if (latestEvent) {
-        setCurrentProgress(latestEvent.content);
-      }
+    if (progressData) {
+      setCurrentProgress(progressData);
     }
-  }, [data]);
+  }, [progressData]);
 
   const config = stageConfig[currentProgress.stage];
   const IconComponent = config.icon;
