@@ -10,6 +10,7 @@ import {
   Star,
   FileText,
   Settings,
+  type LucideProps,
 } from 'lucide-react';
 
 // --- Helper components from your example, adapted for our theme ---
@@ -48,7 +49,7 @@ function PulsingDots() {
       {[0, 1, 2].map(i => (
         <motion.div
           key={i}
-          className="h-1.5 w-1.5 rounded-full bg-primary"
+          className="size-1.5 rounded-full bg-primary"
           animate={
             shouldReduceMotion
               ? {}
@@ -91,7 +92,15 @@ interface HotelProgressProps {
   progressData?: HotelProgressData;
 }
 
-const stageConfig = {
+// Define a type for the config object to make `rotating` property type-safe
+type StageConfig = {
+    [key in HotelProgressData['stage']]: {
+        icon: React.ComponentType<{ className?: string }>;
+        rotating?: boolean;
+    }
+}
+
+const stageConfig: StageConfig = {
     preferences: { icon: Settings },
     parsing: { icon: FileText },
     searching: { icon: MapPin },
@@ -139,7 +148,7 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             className={cn('flex-shrink-0 text-primary', config.rotating && 'animate-spin')}
           >
-            <IconComponent className="h-4 w-4" />
+            <IconComponent className="size-4" />
           </motion.div>
 
           <div className="flex-1 overflow-hidden">
