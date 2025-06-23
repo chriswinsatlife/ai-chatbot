@@ -19,33 +19,27 @@ interface HotelProgressProps {
 const stageConfig = {
   preferences: {
     icon: Settings,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50',
+    color: 'text-primary',
   },
   parsing: {
     icon: FileText,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-50',
+    color: 'text-primary',
   },
   searching: {
     icon: MapPin,
-    color: 'text-green-500',
-    bgColor: 'bg-green-50',
+    color: 'text-primary',
   },
   details: {
     icon: Hotel,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-50',
+    color: 'text-primary',
   },
   reviews: {
     icon: Star,
-    color: 'text-yellow-500',
-    bgColor: 'bg-yellow-50',
+    color: 'text-primary',
   },
   formatting: {
     icon: Settings,
-    color: 'text-indigo-500',
-    bgColor: 'bg-indigo-50',
+    color: 'text-primary',
   },
 };
 
@@ -71,36 +65,36 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
     <Card className="w-full max-w-md mx-auto">
       <CardContent className="p-6">
         <div className="flex items-center space-x-4">
-          <div className={`p-3 rounded-full ${config.bgColor}`}>
+          <div className={`p-3 rounded-full bg-accent`}>
             <IconComponent className={`size-6 ${config.color}`} />
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-sm text-gray-900">
+            <h3 className="font-medium text-sm text-card-foreground">
               {currentProgress.message}
             </h3>
             {currentProgress.destination && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Searching in {currentProgress.destination}
               </p>
             )}
             {progressPercentage !== undefined && (
               <div className="mt-2">
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted rounded-full h-2">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {currentProgress.current} of {currentProgress.total} hotels
                 </p>
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               This may take 5-15 seconds...
             </p>
           </div>
-          <Loader2 className="size-4 animate-spin text-gray-400" />
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
         </div>
       </CardContent>
     </Card>
