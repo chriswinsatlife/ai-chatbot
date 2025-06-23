@@ -83,7 +83,7 @@ export function HotelProgress({ chatId }: HotelProgressProps) {
                 Getting your hotel preferences...
               </h3>
               <p className="text-xs text-muted-foreground mt-2">
-                This may take 5-15 seconds...
+                Please wait while I work on your request...
               </p>
             </div>
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -115,7 +115,7 @@ export function HotelProgress({ chatId }: HotelProgressProps) {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              This may take 5-15 seconds...
+              Please wait while I work on your request...
             </p>
           </div>
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
