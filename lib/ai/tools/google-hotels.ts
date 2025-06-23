@@ -13,22 +13,10 @@ interface GoogleHotelsProps {
   dataStream?: DataStreamWriter;
 }
 
-// Progress event types for hotel search
-interface HotelProgressEvent {
-  type: 'hotel-progress';
-  content: {
-    stage: 'preferences' | 'parsing' | 'searching' | 'details' | 'reviews' | 'formatting';
-    message: string;
-    current?: number;
-    total?: number;
-    destination?: string;
-  };
-}
-
 // Helper function to emit progress events
 function emitProgress(
   dataStream: DataStreamWriter | undefined,
-  stage: HotelProgressEvent['content']['stage'],
+  stage: 'preferences' | 'parsing' | 'searching' | 'details' | 'reviews' | 'formatting',
   message: string,
   current?: number,
   total?: number,
@@ -44,7 +32,7 @@ function emitProgress(
         total,
         destination,
       },
-    } as HotelProgressEvent);
+    });
   }
 }
 

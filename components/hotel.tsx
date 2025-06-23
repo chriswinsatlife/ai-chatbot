@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Hotel, MapPin, Star, FileText, Settings } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface HotelProgressData {
@@ -72,7 +73,7 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
       <CardContent className="p-6">
         <div className="flex items-center space-x-4">
           <div className={`p-3 rounded-full ${config.bgColor}`}>
-            <IconComponent className={`h-6 w-6 ${config.color}`} />
+            <IconComponent className={`size-6 ${config.color}`} />
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-sm text-gray-900">
@@ -85,12 +86,7 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
             )}
             {progressPercentage !== undefined && (
               <div className="mt-2">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
+                <Progress value={progressPercentage} className="h-2" />
                 <p className="text-xs text-gray-500 mt-1">
                   {currentProgress.current} of {currentProgress.total} hotels
                 </p>
@@ -100,7 +96,7 @@ export function HotelProgress({ progressData }: HotelProgressProps) {
               This may take 5-15 seconds...
             </p>
           </div>
-          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          <Loader2 className="size-4 animate-spin text-gray-400" />
         </div>
       </CardContent>
     </Card>
