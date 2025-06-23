@@ -203,10 +203,6 @@ const PurePreviewMessage = ({
                     <div key={toolCallId}>
                       {toolName === 'getWeather' ? (
                         <Weather weatherAtLocation={result} />
-                      ) : toolName === 'googleHotels' ? (
-                        <pre className="hidden">
-                          {JSON.stringify(result, null, 2)}
-                        </pre>
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview
                           isReadonly={isReadonly}

@@ -20,21 +20,17 @@ function emitProgress(
   message: string,
   current?: number,
   total?: number,
-  destination?: string
+  destination?: string,
 ) {
   if (dataStream) {
-    const content: Record<string, any> = {
-      stage,
-      message,
-    };
-    
-    if (current !== undefined) content.current = current;
-    if (total !== undefined) content.total = total;
-    if (destination !== undefined) content.destination = destination;
-    
+    const payload: { [key: string]: any } = { stage, message };
+    if (current !== undefined) payload.current = current;
+    if (total !== undefined) payload.total = total;
+    if (destination !== undefined) payload.destination = destination;
+
     dataStream.writeData({
       type: 'hotel-progress',
-      content,
+      content: payload,
     });
   }
 }
@@ -633,12 +629,18 @@ Sometimes the tool will return extremely long links, in which case you must shor
         );
 
         console.log('[GoogleHotels] Parsed search parameters:', searchParams);
-
-        // Extract destination for progress display
-        const destination = searchParams.q.split(' ').slice(-2).join(' ') || 'your destination';
+        const destination =
+          searchParams.q.split(' in ')[1] || 'your destination';
 
         // Step 3: Execute SerpAPI Google Hotels search
-        emitProgress(dataStream, 'searching', `Searching hotels in ${destination}...`, undefined, undefined, destination);
+        emitProgress(
+          dataStream,
+          'searching',
+          `Searching hotels in ${destination}...`,
+          undefined,
+          undefined,
+          destination,
+        );
         const searchResults = await searchGoogleHotels(searchParams);
         console.log(
           `[GoogleHotels] Found ${searchResults.properties?.length || 0} properties`,
@@ -657,28 +659,47 @@ Sometimes the tool will return extremely long links, in which case you must shor
         // Step 4: Split Out, Limit, Get Details, Summarize Reviews, Merge, Trim, Aggregate (following n8n workflow)
         const limitedProperties = searchResults.properties.slice(0, 20); // Limit step
 
-        // Get property details and summarize reviews for each property
-        const processedProperties = await Promise.all(
-          limitedProperties.map(async (property: any, index: number) => {
-            // Update progress for property details
-            emitProgress(dataStream, 'details', `Reviewing hotel details... (${index + 1}/20)`, index + 1, 20, destination);
-            
-            // SerpAPI call #2: Get property details
-            const detailedProperty = await getPropertyDetails(property);
-            
-            // Update progress for review summaries
-            emitProgress(dataStream, 'reviews', `Analyzing reviews... (${index + 1}/20)`, index + 1, 20, destination);
-            
-            // LLM call #2: Summarize reviews
-            const reviewSummarizedProperty =
-              await summarizeReviews(detailedProperty);
-            // Trim fields
-            return trimFields(reviewSummarizedProperty);
-          }),
-        );
+        const totalDetails = limitedProperties.length;
+        const processedProperties = [];
+
+        for (let i = 0; i < totalDetails; i++) {
+          const property = limitedProperties[i];
+          const currentCount = i + 1;
+
+          // Emit progress for details review
+          emitProgress(
+            dataStream,
+            'details',
+            `Reviewing hotel details... (${currentCount}/${totalDetails})`,
+            currentCount,
+            totalDetails,
+            destination,
+          );
+          const detailedProperty = await getPropertyDetails(property);
+
+          // Emit progress for review analysis
+          emitProgress(
+            dataStream,
+            'reviews',
+            `Analyzing reviews... (${currentCount}/${totalDetails})`,
+            currentCount,
+            totalDetails,
+            destination,
+          );
+          const reviewSummarizedProperty = await summarizeReviews(detailedProperty);
+
+          processedProperties.push(trimFields(reviewSummarizedProperty));
+        }
 
         // Step 5: Format results (LLM call #3)
-        emitProgress(dataStream, 'formatting', 'Applying hotel preferences and re-ranking...', undefined, undefined, destination);
+        emitProgress(
+          dataStream,
+          'formatting',
+          'Applying hotel preferences and re-ranking...',
+          undefined,
+          undefined,
+          destination,
+        );
         const formattedResults = await formatHotelResults(
           processedProperties,
           searchResults,
@@ -687,7 +708,9 @@ Sometimes the tool will return extremely long links, in which case you must shor
         );
 
         console.log(
-          `[GoogleHotels] Returning formatted results (estimated ${Math.floor(formattedResults.length / 4)} tokens)`,
+          `[GoogleHotels] Returning formatted results (estimated ${Math.floor(
+            formattedResults.length / 4,
+          )} tokens)`,
         );
 
         return {
