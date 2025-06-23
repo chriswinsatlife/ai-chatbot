@@ -68,15 +68,15 @@ export function HotelProgress({ chatId }: HotelProgressProps) {
   useEffect(() => {
     if (!data) return;
 
-    // This is the new, safer logic.
-    // 1. First, we filter the array to get *only* the hotel progress events.
     const hotelProgressEvents = data.filter(isHotelProgressEvent);
 
-    // 2. If we found any, we take the most recent one (the last one in the array).
     if (hotelProgressEvents.length > 0) {
       const latestEvent = hotelProgressEvents[hotelProgressEvents.length - 1];
-      // The compiler is now 100% certain that latestEvent is the correct type.
-      setCurrentProgress(latestEvent.content);
+      
+      // This explicit check is the definitive fix for the build error.
+      if (latestEvent) {
+        setCurrentProgress(latestEvent.content);
+      }
     }
   }, [data]);
 
