@@ -1,0 +1,1 @@
+ALTER TABLE "Document" ADD COLUMN "kind" varchar DEFAULT 'text' NOT NULL;
