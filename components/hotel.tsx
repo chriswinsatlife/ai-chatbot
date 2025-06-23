@@ -14,12 +14,6 @@ interface HotelProgressContent {
   destination?: string;
 }
 
-// Define the full event as streamed from the server
-interface HotelProgressEvent {
-  type: 'hotel-progress';
-  content: HotelProgressContent;
-}
-
 // Map stages to icons and colors
 const stageConfig = {
   preferences: { icon: Settings, color: 'text-primary' },
@@ -32,26 +26,35 @@ const stageConfig = {
 
 export function HotelProgress() {
   const { data } = useChat();
-  
-  // Set initial state
+
   const [currentProgress, setCurrentProgress] = useState<HotelProgressContent>({
     stage: 'preferences',
     message: 'Getting your hotel preferences...',
   });
 
-  // Effect to process the data stream
+  // This robustly parses the data stream to find the latest progress event.
   useEffect(() => {
-    // Filter for hotel progress events
-    const hotelProgressEvents = data?.filter(
-      (item: any): item is HotelProgressEvent => item.type === 'hotel-progress'
-    );
+    if (!data) return;
 
-    // Get the latest event
-    const latestEvent = hotelProgressEvents?.at(-1);
-    if (latestEvent) {
-      setCurrentProgress(latestEvent.content);
+    // Find the last valid 'hotel-progress' event in the stream.
+    const latestProgressContent = data.reduce((acc, item) => {
+      if (
+        typeof item === 'object' &&
+        item !== null &&
+        'type' in item &&
+        (item as any).type === 'hotel-progress' &&
+        'content' in item &&
+        typeof (item as any).content === 'object'
+      ) {
+        return (item as any).content as HotelProgressContent;
+      }
+      return acc;
+    }, null as HotelProgressContent | null);
+
+    if (latestProgressContent) {
+      setCurrentProgress(latestProgressContent);
     }
-  }, [data]); // Rerun when the data stream changes
+  }, [data]);
 
   const config = stageConfig[currentProgress.stage];
   const IconComponent = config.icon;
