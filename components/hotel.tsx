@@ -13,6 +13,20 @@ interface HotelProgressData {
   destination?: string;
 }
 
+// Type guard to ensure we are only processing our custom hotel progress events
+function isHotelProgressEvent(
+  item: any
+): item is { type: 'hotel-progress'; content: HotelProgressData } {
+  return (
+    item &&
+    typeof item === 'object' &&
+    !Array.isArray(item) &&
+    item.type === 'hotel-progress' &&
+    item.content &&
+    typeof item.content === 'object'
+  );
+}
+
 interface HotelProgressProps {
   chatId: string;
 }
@@ -52,12 +66,11 @@ export function HotelProgress({ chatId }: HotelProgressProps) {
   });
 
   useEffect(() => {
-    const latestProgress = data?.filter(
-      (item: any) => item.type === 'hotel-progress'
-    ).pop();
+    // Use the type guard to safely filter and find the latest progress event
+    const latestProgressEvent = data?.filter(isHotelProgressEvent).pop();
     
-    if (latestProgress) {
-      setCurrentProgress(latestProgress.content as HotelProgressData);
+    if (latestProgressEvent) {
+      setCurrentProgress(latestProgressEvent.content);
     }
   }, [data]);
 
