@@ -23,15 +23,18 @@ function emitProgress(
   destination?: string
 ) {
   if (dataStream) {
+    const content: Record<string, any> = {
+      stage,
+      message,
+    };
+    
+    if (current !== undefined) content.current = current;
+    if (total !== undefined) content.total = total;
+    if (destination !== undefined) content.destination = destination;
+    
     dataStream.writeData({
       type: 'hotel-progress',
-      content: {
-        stage,
-        message,
-        current,
-        total,
-        destination,
-      },
+      content,
     });
   }
 }
