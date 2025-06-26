@@ -31,7 +31,11 @@ jobs:
           run_install: false
 
       - name: Setup Tiptap Pro Authentication
-        run: ./vercel.sh
+        run: |
+          echo "@tiptap-pro:registry=https://registry.tiptap.dev/" > .npmrc
+          echo "//registry.tiptap.dev/:_authToken=${TIPTAP_PRO_TOKEN}" >> .npmrc
+          echo "public-hoist-pattern[]=*pnpm*" >> .npmrc
+          echo "✅ .npmrc configured for Tiptap Pro"
 
       - name: Get pnpm store directory
         id: pnpm-cache
