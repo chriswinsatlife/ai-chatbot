@@ -13,6 +13,7 @@ jobs:
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +29,9 @@ jobs:
         with:
           version: latest
           run_install: false
+
+      - name: Setup Tiptap Pro Authentication
+        run: ./vercel.sh
 
       - name: Get pnpm store directory
         id: pnpm-cache
