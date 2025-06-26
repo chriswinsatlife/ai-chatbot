@@ -20,6 +20,7 @@ import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { HotelProgress } from '@/components/hotel';
+import { FlightProgress } from '@/components/flight';
 
 const PurePreviewMessage = ({
   chatId,
@@ -173,6 +174,8 @@ const PurePreviewMessage = ({
                         <Weather />
                       ) : toolName === 'googleHotels' ? (
                         <HotelProgress chatId={chatId} />
+                      ) : toolName === 'googleFlights' ? (
+                        <FlightProgress chatId={chatId} />
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview isReadonly={isReadonly} args={args} />
                       ) : toolName === 'updateDocument' ? (
