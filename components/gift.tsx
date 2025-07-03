@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { Loader2, Search, FileText, Settings, History } from 'lucide-react';
+import { Loader2, Search, FileText, Settings, History, Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface GiftProgressContent {
-  stage: 'context' | 'parsing' | 'searching' | 'formatting';
+  stage: 'context' | 'parsing' | 'searching' | 'formatting' | 'deduplication';
   message: string;
   current?: number;
   total?: number;
@@ -18,6 +18,7 @@ const stageConfig = {
   parsing: { icon: FileText, color: 'text-primary' },
   searching: { icon: Search, color: 'text-primary' },
   formatting: { icon: Settings, color: 'text-primary' },
+  deduplication: { icon: Filter, color: 'text-primary' },
 };
 
 interface GiftProgressProps {

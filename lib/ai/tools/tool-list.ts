@@ -38,7 +38,7 @@ export async function assembleTools({
     getUserContext: getUserContext({ userId }),
     googleHotels: googleHotels({ userId, dataStream }),
     googleFlights: googleFlights({ userId, dataStream }),
-    giftFinder: giftFinder({ userId, dataStream }),
+    giftFinder: giftFinder({ userId, dataStream, chatId }),
   };
 
   // Combine standard and n8n tools
