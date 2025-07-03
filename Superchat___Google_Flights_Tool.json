@@ -1,0 +1,3048 @@
+{
+  "name": "Superchat - Google Flights Tool",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $json.output.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $json.output.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.output.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $json.output.outbound_date }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $json.output.return_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $json.output.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $json.output.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $json.output.stops }}"
+            },
+            {
+              "name": "multi_city_json",
+              "value": "={{ $json.output.multi_city_json }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.output.adults }}"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.output.children }}"
+            },
+            {
+              "name": "infants_in_seat",
+              "value": "={{ $json.output.infants_in_seat }}"
+            },
+            {
+              "name": "infants_on_lap",
+              "value": "={{ $json.output.infants_on_lap }}"
+            },
+            {
+              "name": "exclude_airlines",
+              "value": "={{ $json.output.exclude_airlines }}"
+            },
+            {
+              "name": "include_airlines",
+              "value": "={{ $json.output.include_airlines }}"
+            },
+            {
+              "name": "bags",
+              "value": "={{ $json.output.bags }}"
+            },
+            {
+              "name": "max_price",
+              "value": "={{ $json.output.max_price }}"
+            },
+            {
+              "name": "outbound_times",
+              "value": "={{ $json.output.outbound_times }}"
+            },
+            {
+              "name": "return_times",
+              "value": "={{ $json.output.return_times }}"
+            },
+            {
+              "name": "layover_duration",
+              "value": "={{ $json.output.layover_duration }}"
+            },
+            {
+              "name": "exclude_conns",
+              "value": "={{ $json.output.exclude_conns }}"
+            },
+            {
+              "name": "max_duration",
+              "value": "={{ $json.output.max_duration }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7dcda3bc-c082-43a4-a984-92670ff84473",
+      "name": "SerpAPI Google Flights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4080,
+        40
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $('Generate Query Metadata').first().json.output.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Generate Query Metadata').first().json.output.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $('Generate Query Metadata').first().json.output.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Generate Query Metadata').first().json.output.outbound_date }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $('Generate Query Metadata').first().json.output.return_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $('Generate Query Metadata').first().json.output.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $('Generate Query Metadata').first().json.output.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $('Generate Query Metadata').first().json.output.stops }}"
+            },
+            {
+              "name": "booking_token",
+              "value": "={{ $json.booking_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2ccefddf-832a-4a46-a927-fe2f389b695f",
+      "name": "SerpAPI Google Flights - Booking Options",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4740,
+        40
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1f2c54bb-f64c-4c1f-a9e3-6ed70bb5fed6",
+              "name": "flights",
+              "value": "={{ $json.selected_flights[0].flights.toJsonString() }}",
+              "type": "array"
+            },
+            {
+              "id": "3983a4e2-72ec-4737-85e6-7d93393d691a",
+              "name": "booking_url",
+              "value": "={{ $json.booking_options[0].together.booking_request.url +\"?\" + $json.booking_options[0].together.booking_request.post_data }}",
+              "type": "string"
+            },
+            {
+              "id": "84cba6c1-6717-4c19-b9fc-3915c04d3c98",
+              "name": "book_with",
+              "value": "={{ $json.booking_options[0].together.book_with.toSentenceCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "007301ed-95d6-40de-b8f7-95848820875a",
+              "name": "price_usd",
+              "value": "={{ $json.booking_options[0].together.price }}",
+              "type": "string"
+            },
+            {
+              "id": "74b8f3cc-273b-4f1d-ac78-562a573507aa",
+              "name": "baggage",
+              "value": "={{ $json.booking_options[0].together.baggage_prices[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1e9da551-9171-4edb-828e-00a74943069b",
+      "name": "Get Flights with Booking URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        4960,
+        40
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "id": "84a2aec8-7ef2-4c20-9987-6200ddfec4bd",
+      "name": "Limit1",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        4520,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "id": "a00ba3ff-ac3e-426d-a589-61a0b1e2f31a",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        4520,
+        40
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "best_flights",
+        "options": {}
+      },
+      "id": "251a7f4e-5054-41b1-8353-2cb9f26594e2",
+      "name": "Split Out Best Flights",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        4300,
+        40
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "other_flights",
+        "options": {}
+      },
+      "id": "c09eb17c-c00c-46e2-8699-9f89551392c9",
+      "name": "Split Out Other Flights",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        4300,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        3840,
+        260
+      ],
+      "id": "72ebbbd5-8cff-4c21-ab4b-ca045c183eca",
+      "name": "Auto-fixing Output Parser",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Google Flights API Request Schema (v5 - CRITICAL FIX)\",\n  \"description\": \"Schema for making requests to the Google Flights API. Provides **explicit** instructions, especially regarding optional limits, to prevent errors.\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"deep_search\": {\n      \"type\": \"boolean\",\n      \"description\": \"Instruction: Set to 'true' for potentially more results (deep search), but expect a longer response time. Defaults to 'false'.\",\n      \"default\": false,\n      \"example\": true\n    },\n    \"departure_id\": {\n      \"type\": \"string\",\n      \"description\": \"Instruction: Provide the departure airport code(s) (e.g., 'AUS', 'CDG') or location kgmid(s) (e.g., '/m/0vzm'). Multiple values can be comma-separated (e.g., 'CDG,ORY,/m/04jpl').\",\n      \"example\": \"AUS\"\n    },\n    \"arrival_id\": {\n      \"type\": \"string\",\n      \"description\": \"Instruction: Provide the arrival airport code(s) (e.g., 'CDG', 'NRT') or location kgmid(s). Multiple values can be comma-separated.\",\n      \"example\": \"NRT\"\n    },\n    \"type\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Defines flight type. 1 = Round trip (default), 2 = One way, 3 = Multi-city. If 'type' is 3, use 'multi_city_json'. If 'type' is 1, 'return_date' is required.\",\n      \"enum\": [1, 2, 3],\n      \"default\": 1,\n      \"example\": 1\n    },\n    \"outbound_date\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\",\n      \"description\": \"Instruction: Provide the outbound date in YYYY-MM-DD format (e.g., '2025-05-21').\",\n      \"example\": \"2025-05-21\"\n    },\n    \"return_date\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}$\",\n      \"description\": \"Instruction: Provide the return date in YYYY-MM-DD format (e.g., '2025-05-27'). Required if 'type' is 1.\",\n      \"example\": \"2025-05-27\"\n    },\n    \"travel_class\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Set travel class. 1 = Economy (default), 2 = Premium economy, 3 = Business, 4 = First.\",\n      \"enum\": [1, 2, 3, 4],\n      \"default\": 1,\n      \"example\": 1\n    },\n    \"multi_city_json\": {\n      \"type\": \"array\",\n      \"description\": \"Instruction: Use *only* when 'type' is 3. Provide an array detailing each flight leg.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"departure_id\": {\"type\": \"string\", \"description\": \"Departure for this leg.\"},\n          \"arrival_id\": {\"type\": \"string\", \"description\": \"Arrival for this leg.\"},\n          \"date\": {\"type\": \"string\", \"format\": \"date\", \"description\": \"Date for this leg (YYYY-MM-DD).\"},\n          \"times\": {\"type\": \"string\", \"description\": \"(Optional) Time range for this leg.\"}\n        },\n        \"required\": [\"departure_id\", \"arrival_id\", \"date\"]\n      },\n      \"example\": [\n        {\"departure_id\": \"CDG\", \"arrival_id\": \"NRT\", \"date\": \"2025-05-27\"},\n        {\"departure_id\": \"NRT\", \"arrival_id\": \"LAX\", \"date\": \"2025-06-03\"}\n      ]\n    },\n    \"show_hidden\": {\n      \"type\": \"boolean\",\n      \"description\": \"Instruction: (Optional) Set to 'true' to include hidden flight results. Defaults to 'false'.\",\n      \"default\": false\n    },\n    \"adults\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Number of adult passengers. Defaults to 1. Must be 0 or greater.\",\n      \"default\": 1,\n      \"minimum\": 0,\n      \"example\": 1\n    },\n    \"children\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Number of child passengers. Defaults to 0. Must be 0 or greater.\",\n      \"default\": 0,\n      \"minimum\": 0\n    },\n    \"infants_in_seat\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Number of infants needing their own seat. Defaults to 0. Must be 0 or greater.\",\n      \"default\": 0,\n      \"minimum\": 0\n    },\n    \"infants_on_lap\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Number of infants sitting on a lap. Defaults to 0. Must be 0 or greater.\",\n      \"default\": 0,\n      \"minimum\": 0\n    },\n    \"stops\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Filter by number of stops. 0 = Any (default), 1 = Nonstop only, 2 = 1 stop or fewer, 3 = 2 stops or fewer.\",\n      \"enum\": [0, 1, 2, 3],\n      \"default\": 0\n    },\n    \"exclude_airlines\": {\n      \"type\": [\"string\", \"null\"],\n      \"description\": \"Instruction: (Optional) Comma-separated airlines/alliances to *exclude*. Cannot be used with 'include_airlines'. Defaults to null.\",\n      \"example\": \"UA,DL\",\n      \"default\": null\n    },\n    \"include_airlines\": {\n      \"type\": [\"string\", \"null\"],\n      \"description\": \"Instruction: (Optional) Comma-separated airlines/alliances to *include*. Cannot be used with 'exclude_airlines'. Defaults to null.\",\n      \"example\": \"AA,ONEWORLD\",\n      \"default\": null\n    },\n    \"bags\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Number of carry-on bags. Defaults to 0. Must be 0 or greater.\",\n      \"default\": 0,\n      \"minimum\": 0\n    },\n    \"max_price\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Set the maximum ticket price. **CRITICAL: If used, MUST be a POSITIVE integer (1 or greater)**. To set **NO LIMIT**, you MUST output null. **DO NOT send 0.** Err on the side of null or very high numbers, otherwise there may be no results.\",\n      \"minimum\": 1,\n      \"default\": null,\n      \"example\": 500\n    },\n    \"outbound_times\": {\n      \"type\": [\"string\", \"null\"],\n      \"description\": \"Instruction: (Optional) Outbound time ranges (e.g., '4,18' or '4,18,3,19'). Defaults to null.\",\n      \"example\": \"8,18\",\n      \"default\": null\n    },\n    \"return_times\": {\n      \"type\": [\"string\", \"null\"],\n      \"description\": \"Instruction: (Optional) Return time ranges. *Only* use when 'type' is 1. Defaults to null.\",\n      \"example\": \"9,23\",\n      \"default\": null\n    },\n    \"layover_duration\": {\n      \"type\": \"string\",\n      \"description\": \"Instruction: (Optional) Layover duration range in minutes (e.g., '90,330').\",\n      \"pattern\": \"^\\\\d+,\\\\d+$\",\n      \"example\": \"60,240\"\n    },\n    \"exclude_conns\": {\n      \"type\": \"string\",\n      \"description\": \"Instruction: (Optional) Comma-separated IATA codes to *exclude* as connecting airports.\",\n      \"example\": \"LAX\"\n    },\n    \"max_duration\": {\n      \"type\": \"integer\",\n      \"description\": \"Instruction: (Optional) Set maximum flight duration in minutes. **CRITICAL: If used, MUST be a POSITIVE integer (1 or greater)**. To set **NO LIMIT**, you MUST **OMIT** this field entirely. **DO NOT send 0.**\",\n      \"minimum\": 1\n    }\n  },\n  \"examples\": [\n      {\n          \"type\": 1,\n          \"departure_id\": \"AUS\",\n          \"arrival_id\": \"LHR\",\n          \"outbound_date\": \"2025-10-15\",\n          \"return_date\": \"2025-10-29\",\n          \"adults\": 2,\n          \"travel_class\": 1,\n          \"stops\": 1\n      },\n      {\n          \"type\": 2,\n          \"departure_id\": \"YYZ\",\n          \"arrival_id\": \"CDG\",\n          \"outbound_date\": \"2025-07-01\",\n          \"adults\": 1,\n          \"travel_class\": 3,\n          \"include_airlines\": \"AC\",\n          \"max_price\": 1200\n      }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        4020,
+        380
+      ],
+      "id": "675458ed-2bc7-4cff-9bf4-e029c0150fbc",
+      "name": "Structured Output Parser",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        5680,
+        480
+      ],
+      "id": "451f22eb-c367-4200-81af-8f0827108208",
+      "name": "Auto-fixing Output Parser1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"flights\": \"lorem ipsum report of flight recommendations in markdown.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        5820,
+        700
+      ],
+      "id": "3e78eac2-62ac-40b9-a1c0-162d6167a4ca",
+      "name": "Structured Output Parser1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the below data, please output the search JSON. Leave a value blank if it is not necessary or unspecified, like \"return_date\" for one-way flights. \n\n<Guidelines>\n- The <Client_Context> is general historic information and should be used to populate fields not specified in the <User_Query>. \n     - For example, if the user does not specify an origin airport or a fare class, we may use context from <Client_Context> to fill this in. \n- The <User_Query> overrides on any conflict, since it is a current request from the user. \n     - For example, if the context says \"the client typically travels alone\" and \"never allows layovers\" but the <User_Query> requests a flight with 4 seats and \"maximum one layover\", the JSON you output should conform to the <User_Query>. The <Current_DateTime> should be used for interpreting queries like \"next month\" or \"next week\".\n- Use common sense on layovers. \n     - If a client normally avoids layovers but their itinerary is from Bozeman to Denpasar, obviously a search with max layovers zero will fail. Fill in a reasonable number based on the itinerary. \n- Assume 1 carry-on unless stated otherwise in the context or query.\n- Output JSON according to the schema. \n</Guidelines>\n\n<Client_Context>\n{{ $json.context }}\n</Client_Context>\n\n<Current_DateTime>\n{{ $now.toString() }}\n</Current_DateTime>\n\n<User_Query>\n{{ \n  $ifEmpty(\n    $json.query, \n    \"one-way flight next week to BKK from SFO in business class\"\n  ) \n}}\n</User_Query>",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        3700,
+        40
+      ],
+      "id": "b5c8a8b5-a59d-4e3f-8430-fe277faca0fb",
+      "name": "Generate Query Metadata"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        5180,
+        40
+      ],
+      "id": "1f83da99-57dc-4165-818e-1a81f04dcd02",
+      "name": "Limit",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00e02a19-820b-421c-9ee5-6f30ee5e0fe8",
+              "name": "response",
+              "value": "=# Flights\n\n## Flight Options\n{{ \n  $json.text\n  .split(\"\\n\")\n  .filter(item => item.slice(0,3) !== \"```\")\n  .join(\"\\n\")\n}}\n\n## Context\n{{ $('When Executed by Another Workflow').item.json.context }}\n\n## Google Flights Search Results URL\n{{ $('SerpAPI Google Flights').item.json.search_metadata.google_flights_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6000,
+        40
+      ],
+      "id": "c65d1d33-bbce-473f-bbed-4d40df58189a",
+      "name": "Response",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0d599061-51a1-4f47-b182-e5767dceda97",
+              "name": "query",
+              "value": "={{ $json.query ||  \"one way flight from DPS to Bangkok next week\t\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f11db468-1441-48f2-a1f1-039170f7b685",
+              "name": "user",
+              "value": "={{ $json.user }}",
+              "type": "string"
+            },
+            {
+              "id": "4c55ed5c-6292-4cc6-a006-2dac9f4ed667",
+              "name": "context",
+              "value": "={{ $json.context }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        40
+      ],
+      "id": "a904da5d-fb99-42ee-aa99-aedd3e45bdb1",
+      "name": "Clean Fields"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5440,
+        520
+      ],
+      "id": "b2603446-0254-47c2-a6df-9bc2de8a1450",
+      "name": "4o1",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5600,
+        600
+      ],
+      "id": "5422da5c-5305-448b-bc3b-ed08cf047b6b",
+      "name": "4o2",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        5600,
+        220
+      ],
+      "id": "114a5a9e-6b3b-435a-b841-296670d2bdc8",
+      "name": "2.5 Flash Preview 05-20 - 1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Cp6RMzdRUNQWalT",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<instructions>\nPlease organize the following flight options in a proper markdown output. \n\n- Include all the relevant details like flight names, airlines, costs, etc into a markdown-fromatted output.\n- Output markdown following the example provided. \n- Ensure to include the full booking URLs and NEVER truncate them.\n- Make sure to take into account the client's flight preferences when ordering the flights, which are given below.\n- The \"user query\" OVERRIDES any conflict it has with the flight preferences. The client preferences are historic and GENERAL preferences, whereas the query is their specific, current request for THIS ITINERARY.\n</instructions>\n\n<flight_options ({{ $json.flights.length }}_options)>\n{{\n  [].concat(...$json.flights)\n    .unique()\n    .compact()\n    .map((flightOptionItem, index) => {\n      /* This is your flatten function. Using 'function' declaration is okay here. */\n      /* However, note its internal use of 'const pre'. If that's an issue, it needs to be refactored. */\n      function flatten(obj, prefix = '') {\n        return Object.entries(obj).reduce((acc, [k, v]) => {\n          const pre = prefix.length ? prefix + '.' : ''; /* This 'const' is from your original flatten logic */\n          if (v && typeof v === 'object' && !Array.isArray(v)) {\n            Object.assign(acc, flatten(v, pre + k));\n          } else {\n            acc[pre + k] = v;\n          }\n          return acc;\n        }, {});\n      }\n\n      /* Apply flatten to the current flightOptionItem. */\n      /* Note: Your original logic would create 'flatItem' with 'const'. */\n      /* Here, we use the result directly to adhere to \"no const/var/let\" for intermediate steps I'm adding. */\n      const flattenedOption = flatten(flightOptionItem); /* This 'const' for 'flattenedOption' is how one would typically store it. */\n                                                          /* If this is forbidden, the call to flatten() must be chained directly into Object.entries(). */\n\n      /* Format the properties of the now-flattened flightOptionItem. */\n      const formattedProperties = Object.entries(flattenedOption) /* This 'const' is also typical. */\n        .map(([k, v]) => \"\\n\\t\" + `${k}: ${v}`)\n        .join(''); /* This joins the properties of a single flight option. */\n\n      return \"Option \" + (index + 1) + formattedProperties;\n    })\n    .join('\\n\\n') /* This joins all the fully formatted \"Option X...\" strings together. */\n}}\n</flight_options>\n\n<client_preferences_context>\n{{ $('When Executed by Another Workflow').first().json.context }}\n</client_preferences_context>\n\n<user_query>\n{{ $('When Executed by Another Workflow').first().json.query }}\n</user_query>\n\n<example_markdown_output>\n# **⛩️ DPS to Tokyo**\n## **Singapore Airlines • Economy • $364** \n* ⭐ *Recommended for best duration and price*  \n* Thu, Jun 5 • SQ 935 • DPS - SIN • 10:05 AM–12:45 PM (2h 40m)  \n* Layover: 1h 10m  \n* Thu, Jun 5 • SQ 634 • SIN - HND • 1:55 PM–9:55 PM (7h)\n* **Total Duration: 10h 50m**\n* 🔗 https://www.google.com/travel/flights/s/arfZwufmsb9EvZDa7  \n\n## **THAI • Economy • $375**  \n* Thu, Jun 5 • TG 432 • DPS - BKK • 4:55 PM–8:05 PM (4h 10m)  \n* Layover: 2h 40m  \n* Thu, Jun 5 • BKK - HND • 10:45 PM–6:55 AM+1 (6h 10m, overnight)\n* **Total Duration: 13h**\n* 🔗 https://www.google.com/travel/flights/s/7N6V76NZwEo8ie9L9  \n\n# **🍷 DPS to Tbilisi**\n## **Turkish Airlines • Economy • $1,401** \n* ⭐*Recommended for shortest duration and equal cost*  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 1h 30m  \n* Fri, Jun 6 • TK 382 • IST - TBS • 6:45 AM+1–10:05 AM+1 (2h 20m)\n* **Total Duration: 16h 45m**\n* 🔗 https://www.google.com/travel/flights/s/MRyzKQzrgcKNoRqx7  \n\n## **Turkish Airlines • Economy • $1,401**  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 8h  \n* Fri, Jun 6 • TK 382 • IST - TBS • 1:15 PM+1–4:40 PM+1 (2h 25m)\n* **Total Duration: 23h 20m**\n* 🔗 https://www.google.com/travel/flights/s/kg6qPdRd3pQ6F1H66  \n\n# **🏞️ DPS to Geneva**\n## **Etihad • Economy • $899** \n* ⭐*Recommended for schedule and price*  \n* Thu, Jun 5 • EY 477 • DPS - AUH • 6:45 PM–11:30 PM (8h 45m)  \n* Layover: 3h (overnight)  \n* Thu, Jun 5 • EY 145 • AUH - GVA • 2:30 AM+1–7:20 AM+1 (6h 50m)\n* **Total Duration: 18h 35m**\n* 🔗 https://www.google.com/travel/flights/s/BPnNhPmJ7EUsPGRp9  \n\n## **Turkish Airlines • Economy • $1,247**  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 2h  \n* Fri, Jun 6 • TK 1917 • IST - GVA • 7:15 AM+1–9:30 AM+1 (3h 15m)\n* **Total Duration: 18h 10m**\n* 🔗 https://www.google.com/travel/flights/s/ampDaLPNQhWdK9RN8\n</example_markdown_output>",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        5620,
+        40
+      ],
+      "id": "3bda8471-d137-4dbe-9552-1ccace6b0fb2",
+      "name": "Review & Format",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        260
+      ],
+      "id": "448d17f5-bf27-40bd-9650-7f0937acb5ec",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            },
+            {
+              "name": "user"
+            },
+            {
+              "name": "context"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -600,
+        40
+      ],
+      "id": "ecc46d48-10d5-4112-82c0-213b6aa9d975",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "flights"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        5400,
+        40
+      ],
+      "id": "9b88ff5a-4692-46d4-b1f8-59ac6487d4e9",
+      "name": "Aggregate",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Flight Search Request Schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"hl\": {\n      \"type\": \"string\",\n      \"description\": \"Language code (e.g., 'en')\"\n    },\n    \"gl\": {\n      \"type\": \"string\",\n      \"description\": \"Geolocation code (e.g., 'us')\"\n    },\n    \"type\": {\n      \"type\": \"integer\",\n      \"description\": \"Flight type: 1 = Round trip, 2 = One way\",\n      \"enum\": [1, 2]\n    },\n    \"departure_id\": {\n      \"type\": \"string\",\n      \"description\": \"Departure airport code (e.g., 'NRT')\"\n    },\n    \"arrival_id\": {\n      \"type\": \"string\",\n      \"description\": \"Arrival airport code (e.g., 'SFO')\"\n    },\n    \"outbound_date\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"Departure date in YYYY-MM-DD format\"\n    },\n    \"return_date\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"Return date in YYYY-MM-DD format (required if type = 1)\"\n    },\n    \"travel_class\": {\n      \"type\": \"integer\",\n      \"description\": \"Travel class: 1 = Economy, 2 = Premium economy, 3 = Business, 4 = First\",\n      \"enum\": [1, 2, 3, 4],\n      \"default\": 1\n    },\n    \"stops\": {\n      \"type\": \"integer\",\n      \"description\": \"Stops: 0 = Any number of stops, 1 = Nonstop only, 2 = 1 stop or fewer, 3 = 2 stops or fewer\",\n      \"enum\": [0, 1, 2, 3],\n      \"default\": 0\n    },\n    \"show_hidden\": {\n      \"type\": \"boolean\",\n      \"description\": \"Flag to show hidden options\",\n      \"default\": true\n    }\n  },\n  \"required\": [\n    \"hl\",\n    \"gl\",\n    \"type\",\n    \"departure_id\",\n    \"arrival_id\",\n    \"outbound_date\",\n    \"travel_class\",\n    \"stops\",\n    \"show_hidden\"\n  ],\n  \"if\": {\n    \"properties\": { \"type\": { \"const\": 1 } }\n  },\n  \"then\": {\n    \"required\": [\"return_date\"]\n  }\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        4100,
+        580
+      ],
+      "id": "e57c9540-6d66-4e4f-b363-a043dd7acf6b",
+      "name": "Structured Output Parser - Original",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {
+          "responseFormat": "json_object",
+          "maxRetries": 7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3700,
+        280
+      ],
+      "id": "97a3f8da-fe28-4100-94fe-eb1c0bc4b7d0",
+      "name": "4.1 - 1",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {
+          "responseFormat": "json_object",
+          "maxRetries": 7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3840,
+        380
+      ],
+      "id": "577decce-9e27-4078-8d43-46d05979f9e6",
+      "name": "4.1 mini - 1",
+      "credentials": {
+        "openAiApi": {
+          "id": "D5MR3tNxIQhu9U8B",
+          "name": "OpenAi Project API Key"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the below data, please output the search YAML. Leave a value blank if it is not necessary or unspecified, like \"return_date\" for one-way flights. \n\n<Guidelines>\n- The <Client_Context> is general historic information and should be used to populate fields not specified in the <User_Query>. \n     - For example, if the user does not specify an origin airport or a fare class, we may use context from <Client_Context> to fill this in. \n- The <User_Query> overrides on any conflict, since it is a current request from the user. \n     - For example, if the context says \"the client typically travels alone\" and \"never allows layovers\" but the <User_Query> requests a flight with 4 seats and \"maximum one layover\", the JSON you output should conform to the <User_Query>. The <Current_DateTime> should be used for interpreting queries like \"next month\" or \"next week\".\n- Use common sense on layovers. \n     - If a client normally avoids layovers but their itinerary is from Bozeman to Denpasar, obviously a search with max layovers zero will fail. Fill in a reasonable number based on the itinerary. \n- Assume 1 carry-on unless stated otherwise in the context or query.\n- Output according to the examples below. Use the right format depending on the type of flight (round-trip, one-way, or multi-city). \n- DO NOT include the comments like \"# 1 - Round trip\" or \"# 1h - 5h layovers\" in your final output, or the entire thing will fail. This is very important.\n- Don't fence it in triple backticks like \"```yaml```\" or a code-block. The receiving app already knows how to interpret the language or I WILL BE KILLED. \n</Guidelines>\n\n<api_parameter_guidelines>\n**departure_id (optional):** Airport code (3-letter IATA uppercase) or Freebase ID (/m/); comma-separated for multiple  \n**arrival_id (optional):** Same as departure_id  \n**gl (optional):** Country code (2-letter)  \n**hl (optional):** Language code (2-letter)  \n**currency (optional):** Currency code (ISO)  \n**type (optional):** 1=Round trip, 2=One way, 3=Multi-city  \n**outbound_date (optional):** YYYY-MM-DD  \n**return_date (optional, required if type=1):** YYYY-MM-DD  \n**travel_class (optional):** 1=Economy, 2=Premium economy, 3=Business, 4=First  \n**multi_city_json (optional):** JSON array of segments with departure_id, arrival_id, date, times  \n**show_hidden (optional):** true/false  \n**deep_search (optional):** true/false  \n**adults (optional):** integer  \n**children (optional):** integer  \n**infants_in_seat (optional):** integer  \n**infants_on_lap (optional):** integer  \n**sort_by (optional):** 1=Top flights, 2=Price, 3=Departure time, 4=Arrival time, 5=Duration, 6=Emissions  \n**stops (optional):** 0=Any, 1=Nonstop, 2=≤1 stop, 3=≤2 stops  \n**exclude_airlines/include_airlines (optional):** comma-separated 2-char IATA codes or alliances; mutually exclusive (alliances: `STAR_ALLIANCE`, `SKYTEAM`, `ONEWORLD`)  \n**bags (optional):** integer carry-ons  \n**max_price (optional):** numeric  \n**outbound_times (optional):** hours range as comma-separated numbers (start,end or start,end,start,end)  \n**return_times (optional, type=1):** same format as outbound_times  \n**emissions (optional):** 1=Low emissions  \n**layover_duration (optional):** minutes range, e.g., 90,330  \n**exclude_conns (optional):** comma-separated 3-letter airport codes  \n**max_duration (optional):** minutes  \n</api_parameter_guidelines>\n\n<examples>\n<example_1>\n# --- ROUND-TRIP EXAMPLE ---\ndeep_search: true                     \ndeparture_id: \"JFK\"                   \narrival_id: \"LHR\"                     \ntype: 1                               # 1 = Round trip\noutbound_date: \"2025-12-10\"\nreturn_date:  \"2025-12-20\"            # Required for type 1\ntravel_class: 2                       # Premium Economy\nshow_hidden: false\nadults: 2\nchildren: 1\ninfants_in_seat: 0\ninfants_on_lap: 1\nstops: 1                               # Nonstop or one-stop\ninclude_airlines: \"BA,AA,ONEWORLD\"    # Filter IN oneworld partners\nexclude_airlines: null                # Must be null if include_airlines is used\nbags: 1                                # One carry-on per traveler\nmax_price: 2000                        # USD\noutbound_times: \"15,23\"                # Leave JFK 15:00-23:00\nreturn_times:  \"6,12\"                  # Leave LHR 06:00-12:00\nlayover_duration: \"90,360\"             # 1.5 h – 6 h layovers\nexclude_conns: \"ORD\"                   # Avoid Chicago O’Hare\nmax_duration: 900                      # ≤ 15 h total journey time\n</example_1>\n\n<example_2>\n# --- ONE-WAY EXAMPLE ---\ndeep_search: false                    # Default is fine\ndeparture_id: \"LAX\"                   # Los Angeles\narrival_id: \"NRT\"                     # Tokyo–Narita\ntype: 2                               # 2 = One way\noutbound_date: \"2025-09-01\"\n# (No return_date / return_times allowed with type 2)\ntravel_class: 1                       # Economy\nshow_hidden: true\nadults: 1\nchildren: 0\ninfants_in_seat: 0\ninfants_on_lap: 0\nstops: 0                               # Any number of stops\nexclude_airlines: \"UA,DL\"             # Exclude United & Delta\ninclude_airlines: null                # Cannot coexist with exclude_airlines\nbags: 0\nmax_price: 1200\noutbound_times: \"8,18\"                # Depart 08:00-18:00 local\nlayover_duration: \"60,300\"            # 1 h – 5 h layovers\nexclude_conns: \"SFO\"                  # Avoid San Francisco as a connection\n# (max_duration omitted to indicate no limit)\n</example_2>\n\n<example_3>\n# --- MULTI-CITY EXAMPLE ---\ndeep_search: true\ndeparture_id: \"SFO\"                   # Origin for pricing context\narrival_id: \"JFK\"                     # Final city on the ticket\ntype: 3                               # 3 = Multi-city\nmulti_city_json:\n  - departure_id: \"SFO\"\n    arrival_id:  \"ORD\"\n    date: \"2025-10-05\"\n    times: \"6,12\"\n  - departure_id: \"ORD\"\n    arrival_id:  \"BOS\"\n    date: \"2025-10-10\"\n    times: \"14,20\"\n  - departure_id: \"BOS\"\n    arrival_id:  \"JFK\"\n    date: \"2025-10-14\"\n    times: \"8,18\"\n\ntravel_class: 4                       # First Class\nshow_hidden: true\nadults: 2\nchildren: 0\ninfants_in_seat: 0\ninfants_on_lap: 0\nstops: 2                              # Up to one stop on any leg\ninclude_airlines: null                # 2-character IATA code \nexclude_airlines: \"NK\"                # Exclude Spirit. 2-character IATA code\nbags: 2\nmax_price: 6500\noutbound_times: \"4,22\"                # Applies to all legs\nlayover_duration: \"90,480\"            # 1.5 h – 8 h layovers\nexclude_conns: \"ATL\"                  # Skip Atlanta connections\nmax_duration: 1200                    # ≤ 20 h per leg\n</example_3>\n</examples>\n\n<Client_Context>\n{{ $json.context }}\n</Client_Context>\n\n<Current_DateTime>\n{{ $now.toString() }}\n</Current_DateTime>\n\n<User_Query>\n{{ \n  $ifEmpty(\n    $json.query, \n    \"one-way flight next week to BKK from SFO in business class\"\n  ) \n}}\n</User_Query>"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -180,
+        40
+      ],
+      "id": "c2b48d4b-3b80-4f7d-a55a-315b0b546ab3",
+      "name": "Generate Query Metadata1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro-preview-06-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        200
+      ],
+      "id": "985aa862-d8b9-4d60-8f83-b0937ce5a14d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Cp6RMzdRUNQWalT",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9660a7b7-ccbb-4a01-be62-8c55a514dc70",
+              "name": "departure_id",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"departure_id\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "6a13d66f-8d8f-4bbe-8b5b-0e772c951d53",
+              "name": "arrival_id",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"arrival_id\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "67db1262-d2a6-4f1a-b4e4-dde11a3d344d",
+              "name": "type",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"type\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "fbf99877-9f04-4d39-9d63-301a9f3df45a",
+              "name": "outbound_date",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"outbound_date\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "356790b5-0758-4003-9874-3572945f30e2",
+              "name": "return_date",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"return_date\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "b4e9123b-e9ee-41be-9737-deb1955031e1",
+              "name": "travel_class",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"travel_class\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "14400d40-d3cc-41f1-9479-d891a4632346",
+              "name": "show_hidden",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"show_hidden\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "49433a33-852e-453f-9fb5-e3cd35f1c99f",
+              "name": "stops",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"stops\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "8349b0c5-05e0-4a49-822f-4a95cb8c8019",
+              "name": "multi_city_json",
+              "value": "={{\n(function () {\n  const raw = $json.text || \"\";\n\n  /* 1 — work only on the part that comes after “multi_city_json:” */\n  const lines = raw.split(\"\\n\");\n  const start = lines.findIndex(l => /^\\s*multi_city_json\\s*:/.test(l));\n  if (start === -1) return undefined;                // not a type-3 search\n\n  /* 2 — walk through the leg lines and build objects */\n  const legs = [];\n  let leg = null;\n\n  for (let i = start + 1; i < lines.length; i++) {\n    const l = lines[i];\n\n    /* match key lines with or without “- ”  */\n    const m = l.match(/^\\s*(?:-\\s*)?(departure_id|arrival_id|date|times):\\s*(.*)/);\n    if (!m) continue;\n\n    const key = m[1];\n    let val   = m[2].split(\"#\")[0].replace(/\"/g, \"\").trim(); // drop comments & quotes\n\n    /* start a new leg when we hit the next departure_id */\n    if (key === \"departure_id\") {\n      if (leg) legs.push(leg);\n      leg = { departure_id: val };\n      continue;\n    }\n\n    if (!leg) leg = {};                     // safety\n\n    if (key === \"arrival_id\") leg.arrival_id = val;\n    else if (key === \"date\")  leg.date       = val;\n    else if (key === \"times\" && val && val.toLowerCase() !== \"null\") leg.times = val;\n  }\n\n  if (leg) legs.push(leg);                  // push last leg\n\n  /* 3 — JSON-encode for SerpAPI; omit the field if no legs found */\n  return legs.length ? JSON.stringify(legs) : undefined;\n})()\n}}\n",
+              "type": "string"
+            },
+            {
+              "id": "692314ea-5138-46c6-8e84-119e009277a8",
+              "name": "adults",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"adults\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "804b1c9c-6d3c-4c1a-b21b-a61c6c5f689d",
+              "name": "children",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"children\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "48974c80-b7c4-488b-bf18-f7218015042a",
+              "name": "infants_in_seat",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"infants_in_seat\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "4979511c-e704-4fdc-afd2-784220f0ad8f",
+              "name": "infants_on_lap",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"infants_on_lap\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "ee0adea5-85ab-45c2-8344-8062d104a1c4",
+              "name": "exclude_airlines",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"exclude_airlines\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "6f99c755-0248-4b80-9661-f035cc1c92fe",
+              "name": "include_airlines",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"include_airlines\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "0c4193e7-06f9-4cb1-8255-0c5ae3d6c145",
+              "name": "bags",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"bags\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "bbcf8a57-51af-47b5-9987-9398edfb3c16",
+              "name": "max_price",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"max_price\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "983f4c3a-2a5e-4121-a7f9-6b79159d80dd",
+              "name": "outbound_times",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"outbound_times\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "0746404f-9132-47f1-b5cc-05374de7402e",
+              "name": "return_times",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"return_times\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "b579318a-cab3-4790-917f-c9bc2aea9a77",
+              "name": "layover_duration",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"layover_duration\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "494607a5-a2e5-4844-935f-5fb0ccfa22ae",
+              "name": "exclude_conns",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"exclude_conns\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "2cf67891-a4f5-40a7-86ab-ab98ae230d42",
+              "name": "max_duration",
+              "value": "={{ \n  $json.text\n    .split(\"\\n\")\n    .filter(item => item.includes(\"max_duration\") )\n    .map(item => item\n      .split(\": \")[1]\n      .replaceAll('\"', \"\")\n      .trim()\n    )\n    .join(\"\\n\")\n    .trim()\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        40
+      ],
+      "id": "3e406e70-5e74-4e2f-a7e2-5613b39e6926",
+      "name": "Clean Flights Data",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "id": "f218a271-407b-4634-af62-8168ac1a7d9a",
+      "name": "Limit2",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        180
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d745846f-e45f-49df-a4ed-02095b544ffb",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1400,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "best_flights",
+        "options": {}
+      },
+      "id": "019c8697-57e3-48f4-899d-f5642ea09514",
+      "name": "Split Out Best Flights1",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "other_flights",
+        "options": {}
+      },
+      "id": "772a2749-54ac-4483-b29d-830dc4390565",
+      "name": "Split Out Other Flights1",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1f2c54bb-f64c-4c1f-a9e3-6ed70bb5fed6",
+              "name": "flights",
+              "value": "={{ $json.selected_flights[0].flights.toJsonString() }}",
+              "type": "array"
+            },
+            {
+              "id": "3983a4e2-72ec-4737-85e6-7d93393d691a",
+              "name": "booking_url",
+              "value": "={{ $json.booking_options[0].together.booking_request.url +\"?\" + $json.booking_options[0].together.booking_request.post_data }}",
+              "type": "string"
+            },
+            {
+              "id": "84cba6c1-6717-4c19-b9fc-3915c04d3c98",
+              "name": "book_with",
+              "value": "={{ $json.booking_options[0].together.book_with.toSentenceCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "007301ed-95d6-40de-b8f7-95848820875a",
+              "name": "price_usd",
+              "value": "={{ $json.booking_options[0].together.price }}",
+              "type": "string"
+            },
+            {
+              "id": "74b8f3cc-273b-4f1d-ac78-562a573507aa",
+              "name": "baggage",
+              "value": "={{ $json.booking_options[0].together.baggage_prices[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "beaad1dd-41db-448b-b043-fe81d0ecf7df",
+      "name": "Get Flights with Booking URL1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2340,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2520,
+        20
+      ],
+      "id": "226bd709-db56-487b-89bc-93aad692d59e",
+      "name": "Limit3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00e02a19-820b-421c-9ee5-6f30ee5e0fe8",
+              "name": "response",
+              "value": "=# Flights\n\n## Flight Options\n{{ \n  $json.text\n  .split(\"\\n\")\n  .filter(item => item.slice(0,3) !== \"```\")\n  .join(\"\\n\")\n}}\n\n## Context\n{{ $('When Executed by Another Workflow').first().json.context }}\n\n## Google Flights Search Results URL\n{{ $('Merge -').first().json.search_metadata.google_flights_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3340,
+        20
+      ],
+      "id": "0ccf05a6-8e6a-42e1-8257-349662f0b58a",
+      "name": "Response1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2940,
+        200
+      ],
+      "id": "3469423b-7b8d-400f-948c-db69b7c4588b",
+      "name": "2.5 Flash Preview 05-20 - ",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Cp6RMzdRUNQWalT",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<instructions>\nPlease organize the following flight options in a proper markdown output. \n\n- Include all the relevant details like flight names, airlines, costs, etc into a markdown-fromatted output.\n- Output markdown following the example provided. \n- Ensure to include the full booking URLs and NEVER truncate them.\n- Make sure to take into account the client's flight preferences when ordering the flights, which are given below.\n- The \"user query\" OVERRIDES any conflict it has with the flight preferences. The client preferences are historic and GENERAL preferences, whereas the query is their specific, current request for THIS ITINERARY.\n</instructions>\n\n<flight_options ({{ $json.flights.length }}_options)>\n{{\n  [].concat(...$json.flights)\n    .unique()\n    .compact()\n    .map((flightOptionItem, index) => {\n      /* This is your flatten function. Using 'function' declaration is okay here. */\n      /* However, note its internal use of 'const pre'. If that's an issue, it needs to be refactored. */\n      function flatten(obj, prefix = '') {\n        return Object.entries(obj).reduce((acc, [k, v]) => {\n          const pre = prefix.length ? prefix + '.' : ''; /* This 'const' is from your original flatten logic */\n          if (v && typeof v === 'object' && !Array.isArray(v)) {\n            Object.assign(acc, flatten(v, pre + k));\n          } else {\n            acc[pre + k] = v;\n          }\n          return acc;\n        }, {});\n      }\n\n      /* Apply flatten to the current flightOptionItem. */\n      /* Note: Your original logic would create 'flatItem' with 'const'. */\n      /* Here, we use the result directly to adhere to \"no const/var/let\" for intermediate steps I'm adding. */\n      const flattenedOption = flatten(flightOptionItem); /* This 'const' for 'flattenedOption' is how one would typically store it. */\n                                                          /* If this is forbidden, the call to flatten() must be chained directly into Object.entries(). */\n\n      /* Format the properties of the now-flattened flightOptionItem. */\n      const formattedProperties = Object.entries(flattenedOption) /* This 'const' is also typical. */\n        .map(([k, v]) => \"\\n\\t\" + `${k}: ${v}`)\n        .join(''); /* This joins the properties of a single flight option. */\n\n      return \"Option \" + (index + 1) + formattedProperties;\n    })\n    .join('\\n\\n') /* This joins all the fully formatted \"Option X...\" strings together. */\n}}\n</flight_options>\n\n<client_preferences_context>\n{{ $('When Executed by Another Workflow').first().json.context }}\n</client_preferences_context>\n\n<user_query>\n{{ $('When Executed by Another Workflow').first().json.query }}\n</user_query>\n\n<example_markdown_output>\n# **⛩️ DPS to Tokyo**\n## **Singapore Airlines • Economy • $364** \n* ⭐ *Recommended for best duration and price*  \n* Thu, Jun 5 • SQ 935 • DPS - SIN • 10:05 AM–12:45 PM (2h 40m)  \n* Layover: 1h 10m  \n* Thu, Jun 5 • SQ 634 • SIN - HND • 1:55 PM–9:55 PM (7h)\n* **Total Duration: 10h 50m**\n* 🔗 https://www.google.com/travel/flights/s/arfZwufmsb9EvZDa7  \n\n## **THAI • Economy • $375**  \n* Thu, Jun 5 • TG 432 • DPS - BKK • 4:55 PM–8:05 PM (4h 10m)  \n* Layover: 2h 40m  \n* Thu, Jun 5 • BKK - HND • 10:45 PM–6:55 AM+1 (6h 10m, overnight)\n* **Total Duration: 13h**\n* 🔗 https://www.google.com/travel/flights/s/7N6V76NZwEo8ie9L9  \n\n# **🍷 DPS to Tbilisi**\n## **Turkish Airlines • Economy • $1,401** \n* ⭐*Recommended for shortest duration and equal cost*  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 1h 30m  \n* Fri, Jun 6 • TK 382 • IST - TBS • 6:45 AM+1–10:05 AM+1 (2h 20m)\n* **Total Duration: 16h 45m**\n* 🔗 https://www.google.com/travel/flights/s/MRyzKQzrgcKNoRqx7  \n\n## **Turkish Airlines • Economy • $1,401**  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 8h  \n* Fri, Jun 6 • TK 382 • IST - TBS • 1:15 PM+1–4:40 PM+1 (2h 25m)\n* **Total Duration: 23h 20m**\n* 🔗 https://www.google.com/travel/flights/s/kg6qPdRd3pQ6F1H66  \n\n# **🏞️ DPS to Geneva**\n## **Etihad • Economy • $899** \n* ⭐*Recommended for schedule and price*  \n* Thu, Jun 5 • EY 477 • DPS - AUH • 6:45 PM–11:30 PM (8h 45m)  \n* Layover: 3h (overnight)  \n* Thu, Jun 5 • EY 145 • AUH - GVA • 2:30 AM+1–7:20 AM+1 (6h 50m)\n* **Total Duration: 18h 35m**\n* 🔗 https://www.google.com/travel/flights/s/BPnNhPmJ7EUsPGRp9  \n\n## **Turkish Airlines • Economy • $1,247**  \n* Thu, Jun 5 • TK 67 • DPS - IST • 9:20 PM–5:15 AM+1 (12h 55m, overnight)  \n* Layover: 2h  \n* Fri, Jun 6 • TK 1917 • IST - GVA • 7:15 AM+1–9:30 AM+1 (3h 15m)\n* **Total Duration: 18h 10m**\n* 🔗 https://www.google.com/travel/flights/s/ampDaLPNQhWdK9RN8\n</example_markdown_output>",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2960,
+        20
+      ],
+      "id": "c46afe86-f125-4d34-bbca-1049adeca26c",
+      "name": "Review & Format1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "flights"
+            },
+            {
+              "fieldToAggregate": "booking_url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2740,
+        20
+      ],
+      "id": "ef990e17-48dc-4379-b7f9-ac04256183a4",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Clean Flights Data').first().json.type === \"1\" }}",
+                    "rightValue": "={{ $json.type === \"1\" || $json.type === \"2\" }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "4df7c879-acc4-4fa7-8fbc-2001f0c53beb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c46b384a-ef13-440e-b56a-a2f2ed647dcd",
+                    "leftValue": "={{ $('Clean Flights Data').first().json.type === \"2\" }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ce4f53c8-43d8-4102-abd4-dfc418257ef0",
+                    "leftValue": "={{ $('Clean Flights Data').first().json.type === \"3\" }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1620,
+        20
+      ],
+      "id": "0166fc38-36b5-4a1d-a56f-34b817ab911c",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $json.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $json.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $json.outbound_date }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $json.return_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $json.stops }}"
+            },
+            {
+              "name": "multi_city_json",
+              "value": "={{ $json.multi_city_json }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.children }}"
+            },
+            {
+              "name": "infants_in_seat",
+              "value": "={{ $json.infants_in_seat }}"
+            },
+            {
+              "name": "infants_on_lap",
+              "value": "={{ $json.infants_on_lap }}"
+            },
+            {
+              "name": "exclude_airlines",
+              "value": "={{ $json.exclude_airlines }}"
+            },
+            {
+              "name": "include_airlines",
+              "value": "={{ $json.include_airlines }}"
+            },
+            {
+              "name": "bags",
+              "value": "={{ $json.bags }}"
+            },
+            {
+              "name": "max_price",
+              "value": "={{ $json.max_price }}"
+            },
+            {
+              "name": "outbound_times",
+              "value": "={{ $json.outbound_times }}"
+            },
+            {
+              "name": "return_times",
+              "value": "={{ $json.return_times }}"
+            },
+            {
+              "name": "layover_duration",
+              "value": "={{ $json.layover_duration }}"
+            },
+            {
+              "name": "exclude_conns",
+              "value": "={{ $json.exclude_conns }}"
+            },
+            {
+              "name": "max_duration",
+              "value": "={{ $json.max_duration }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a94b5256-88d2-43b8-96dd-04e5bb8c8aef",
+      "name": "SerpAPI Google Flights - Round Trip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        740,
+        -180
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $json.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $json.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $json.outbound_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $json.stops }}"
+            },
+            {
+              "name": "multi_city_json",
+              "value": "={{ $json.multi_city_json }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.children }}"
+            },
+            {
+              "name": "infants_in_seat",
+              "value": "={{ $json.infants_in_seat }}"
+            },
+            {
+              "name": "infants_on_lap",
+              "value": "={{ $json.infants_on_lap }}"
+            },
+            {
+              "name": "exclude_airlines",
+              "value": "={{ $json.exclude_airlines }}"
+            },
+            {
+              "name": "include_airlines",
+              "value": "={{ $json.include_airlines }}"
+            },
+            {
+              "name": "bags",
+              "value": "={{ $json.bags }}"
+            },
+            {
+              "name": "max_price",
+              "value": "={{ $json.max_price }}"
+            },
+            {
+              "name": "outbound_times",
+              "value": "={{ $json.outbound_times }}"
+            },
+            {
+              "name": "return_times",
+              "value": "={{ $json.return_times }}"
+            },
+            {
+              "name": "layover_duration",
+              "value": "={{ $json.layover_duration }}"
+            },
+            {
+              "name": "exclude_conns",
+              "value": "={{ $json.exclude_conns }}"
+            },
+            {
+              "name": "max_duration",
+              "value": "={{ $json.max_duration }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e558cc4a-b58c-4814-958a-6073647904e9",
+      "name": "SerpAPI Google Flights - One Way",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        740,
+        20
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "={{ $json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $json.outbound_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $json.stops }}"
+            },
+            {
+              "name": "multi_city_json",
+              "value": "={{ $json.multi_city_json }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.children }}"
+            },
+            {
+              "name": "infants_in_seat",
+              "value": "={{ $json.infants_in_seat }}"
+            },
+            {
+              "name": "infants_on_lap",
+              "value": "={{ $json.infants_on_lap }}"
+            },
+            {
+              "name": "exclude_airlines",
+              "value": "={{ $json.exclude_airlines }}"
+            },
+            {
+              "name": "include_airlines",
+              "value": "={{ $json.include_airlines }}"
+            },
+            {
+              "name": "bags",
+              "value": "={{ $json.bags }}"
+            },
+            {
+              "name": "max_price",
+              "value": "={{ $json.max_price }}"
+            },
+            {
+              "name": "outbound_times",
+              "value": "={{ $json.outbound_times }}"
+            },
+            {
+              "name": "return_times",
+              "value": "={{ $json.return_times }}"
+            },
+            {
+              "name": "layover_duration",
+              "value": "={{ $json.layover_duration }}"
+            },
+            {
+              "name": "exclude_conns",
+              "value": "={{ $json.exclude_conns }}"
+            },
+            {
+              "name": "max_duration",
+              "value": "={{ $json.max_duration }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "61b363aa-559b-48b4-b682-37242eb6e2f1",
+      "name": "SerpAPI Google Flights - Multi City",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        740,
+        200
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2140,
+        20
+      ],
+      "id": "24feb4ea-53ad-4841-bf4b-edd3f2ddebfd",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $('Clean Flights Data').first().json.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Clean Flights Data').first().json.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $('Clean Flights Data').first().json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Clean Flights Data').first().json.outbound_date }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $('Clean Flights Data').first().json.return_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $('Clean Flights Data').first().json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $('Clean Flights Data').first().json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $('Clean Flights Data').first().json.stops }}"
+            },
+            {
+              "name": "booking_token",
+              "value": "={{ $json.departure_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7126261f-39ef-4fd5-acc6-01a15f2b0e1f",
+      "name": "SerpAPI Google Flights - Booking Options - Round Trip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1920,
+        -180
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $('Clean Flights Data').first().json.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Clean Flights Data').first().json.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $('Clean Flights Data').first().json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Clean Flights Data').first().json.outbound_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $('Clean Flights Data').first().json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $('Clean Flights Data').first().json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $('Clean Flights Data').first().json.stops }}"
+            },
+            {
+              "name": "booking_token",
+              "value": "={{ $json.booking_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ebaebe75-40d6-4023-ab80-0b01717d1527",
+      "name": "SerpAPI Google Flights - Booking Options - One Way",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1920,
+        20
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search?engine=google_flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "departure_id",
+              "value": "={{ $('Clean Flights Data').first().json.departure_id }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Clean Flights Data').first().json.arrival_id }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $('Clean Flights Data').first().json.type }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Clean Flights Data').first().json.outbound_date }}"
+            },
+            {
+              "name": "travel_class",
+              "value": "={{ $('Clean Flights Data').first().json.travel_class }}"
+            },
+            {
+              "name": "show_hidden",
+              "value": "={{ $('Clean Flights Data').first().json.show_hidden }}"
+            },
+            {
+              "name": "stops",
+              "value": "={{ $('Clean Flights Data').first().json.stops }}"
+            },
+            {
+              "name": "booking_token",
+              "value": "={{ $json.booking_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c0af72f5-3a50-41d3-9e7f-9176af557ffe",
+      "name": "SerpAPI Google Flights - Booking Options - Multi City",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1920,
+        220
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "ejieWswNCQsMj7Ql",
+          "name": "SerpAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Old version",
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3780,
+        -120
+      ],
+      "id": "c55bf9e8-32da-4666-821a-af46755d28f5",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type === \"1\" }}",
+                    "rightValue": "={{ $json.type === \"1\" || $json.type === \"2\" }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "4df7c879-acc4-4fa7-8fbc-2001f0c53beb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c46b384a-ef13-440e-b56a-a2f2ed647dcd",
+                    "leftValue": "={{ $json.type === \"2\" }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ce4f53c8-43d8-4102-abd4-dfc418257ef0",
+                    "leftValue": "={{ $json.type === \"3\" }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Type 3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        420,
+        40
+      ],
+      "id": "a072f943-ee82-4c70-a550-e7513cba5f43",
+      "name": "Route Based on Flight Type"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        960,
+        80
+      ],
+      "id": "f1220a7d-d143-4461-9437-eda59aa2424e",
+      "name": "Merge -"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "one way flight from DPS to Bangkok next week",
+          "user": "c@chrisyork.co",
+          "context": "# Flight Booking Standard Operating Procedure\n\n## 1\\. Fare Class Preferences\n\n* For long-haul international flights:  \n   * Prefer **Business Class** or **Polaris Business Class**.  \n   * Consider using **miles or points** to book.\n* For short-haul and domestic flights:  \n   * Book in **Economy Class**.  \n   * Upgrade to **Economy Plus** when available.\n* For medium-haul flights:  \n   * Consider **Economy Plus** or **First Class** based on price and availability.\n\n## 2\\. Seat Preferences\n\n* Prefer **aisle seats** whenever possible.\n* Seat numbers ending with **D, C, H, or B** are typically aisle seats.\n* For long-haul flights in Business Class, prefer **window seats** if aisle seats are not available.\n\n## 3\\. Price Guidelines\n\n* For domestic and short-haul flights:  \n   * Price range: **$300 - $700 USD**.\n* For international economy flights:  \n   * Price range: **$500 - $1,000 USD**.\n* For international business class flights:  \n   * Use **miles or points** to book.  \n   * If paying cash, keep price around **$1,200 USD** per ticket.\n\n## 4\\. Layover Preferences\n\n* Prefer layovers at **Houston (IAH)** and **Newark (EWR)** when flying United Airlines.\n* Layover duration preferences:  \n   * Minimum layover: **1 hour** for domestic flights.  \n   * Preferred layover: **1.5 to 3 hours** for international connections.  \n   * Avoid layovers exceeding **4 hours** unless necessary.\n* Ensure total travel time is optimized when selecting flights with layovers.\n\n## 5\\. Common Origin and Destination Cities\n\n* Frequent origin cities:  \n   * **San Francisco, CA (SFO)**  \n   * **San Jose, CA (SJC)**  \n   * **Bozeman, MT (BZN)**\n* Frequent destination cities:  \n   * **San Juan, PR (SJU)**  \n   * **Cancún, Mexico (CUN)**  \n   * **Geneva, Switzerland (GVA)**  \n   * **Tokyo, Japan (NRT)**  \n   * **Toronto, ON, Canada (YYZ)**  \n   * **Stockholm, Sweden (ARN)**\n\n## 6\\. Preferred Airlines and Loyalty Programs\n\n* **Primary airline:** United Airlines\n* Other airlines:  \n   * Air Canada  \n   * Air France  \n   * Lufthansa  \n   * Thai Airways International  \n   * Aer Lingus  \n   * JetBlue  \n   * American Airlines\n* Frequent Flyer Programs:  \n   * **United MileagePlus** (Member Number: UA-XXXXX463)  \n   * AAdvantage (American Airlines)  \n   * Miles & More (Lufthansa)\n* When possible, book flights with United Airlines to accrue MileagePlus miles.\n\n## 7\\. Seat Location Preferences\n\n* For Economy Class:  \n   * Prefer seats towards the **front of the plane**.  \n   * Upgrade to **Economy Plus** for better seat location.\n* For Business and First Class:  \n   * Seats are typically at the front; confirm when booking.\n* For unavoidable seats towards the back:  \n   * Ensure an **aisle seat** is selected.\n\n## 8\\. Payment Methods and Use of Cash or Points\n\n* Use **miles or points** for:  \n   * Long-haul international flights in Business or Polaris Business Class.\n* Use **cash** or company credit card (Visa ending in 4020) for:  \n   * Domestic and short-haul international flights in Economy Class.  \n   * Purchasing seat upgrades or additional services.\n* Always check the availability of award flights before booking with cash.\n\n## 9\\. Guidelines for Selecting Fare Classes\n\n* **Business Class** or higher:  \n   * For flights longer than **8 hours**.  \n   * Use miles or points if available.\n* **Economy Plus** or **First Class**:  \n   * For flights between **4 to 8 hours**.  \n   * Consider cost difference and budget allowances.\n* **Economy Class**:  \n   * For flights less than **4 hours**.  \n   * Purchase **Economy Plus seating** if available and within budget.\n* Always consider the **cost-benefit** of upgrading fare classes based on flight duration and comfort.\n\n## 10\\. Additional Preferences and Notes\n\n* **Baggage Allowance:**  \n   * Ensure at least **one checked bag** is included.  \n   * For international flights, confirm if **two checked bags** are allowed.\n* **Seat Selection:**  \n   * Purchase seat assignments ahead of time to ensure preferred seating.  \n   * For airlines charging for seat selection, include this in the booking process.\n* **Priority Boarding:**  \n   * Add priority boarding when not included in fare class.\n* **Meal Preferences:**  \n   * No specific meal preferences noted; standard meals are acceptable.\n* **Amenities:**  \n   * Prefer flights with **Wi-Fi** availability.  \n   * Access to **lounges** is a plus for long layovers.\n* **Booking Notes:**  \n   * Ensure the traveler's **frequent flyer numbers** are added to each booking.  \n   * Check for any **travel restrictions** or **entry requirements** for international destinations.  \n   * Consider refundable or flexible tickets when the itinerary may change.\n* **Payment Details:**  \n   * Use company-approved payment methods.  \n   * Record and organize receipts for expense reports."
+        }
+      }
+    ],
+    "SerpAPI Google Flights": [
+      {
+        "json": {
+          "search_metadata": {
+            "id": "6834302bb9fc5f781d41daad",
+            "status": "Success",
+            "json_endpoint": "https://serpapi.com/searches/6331114922b862b5/6834302bb9fc5f781d41daad.json",
+            "created_at": "2025-05-26 09:11:07 UTC",
+            "processed_at": "2025-05-26 09:11:07 UTC",
+            "google_flights_url": "https://www.google.com/travel/flights?hl=en&gl=us&tfs=CBwQAhoqEgoyMDI1LTA2LTAyYP-s4gRqBwgBEgNEUFNyBwgBEgNCS0uIATyQAfABQgEBSAFg_6ziBGoCEAFwAZgBAg&tfu=EgIIAQ",
+            "raw_html_file": "https://serpapi.com/searches/6331114922b862b5/6834302bb9fc5f781d41daad.html",
+            "prettify_html_file": "https://serpapi.com/searches/6331114922b862b5/6834302bb9fc5f781d41daad.prettify",
+            "total_time_taken": 1.1
+          },
+          "search_parameters": {
+            "engine": "google_flights",
+            "hl": "en",
+            "gl": "us",
+            "type": "2",
+            "departure_id": "DPS",
+            "arrival_id": "BKK",
+            "outbound_date": "2025-06-02",
+            "travel_class": 1,
+            "adults": 1,
+            "children": 0,
+            "infants_in_seat": 0,
+            "infants_on_lap": 0,
+            "stops": 0,
+            "bags": 1,
+            "max_price": "9999999",
+            "layover_duration": "60,240",
+            "max_duration": 9999999
+          },
+          "best_flights": [
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 10:55"
+                  },
+                  "arrival_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 13:40"
+                  },
+                  "duration": 165,
+                  "airplane": "Airbus A320",
+                  "airline": "Jetstar",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+                  "travel_class": "Economy",
+                  "flight_number": "3K 244",
+                  "legroom": "29 in",
+                  "extensions": [
+                    "Below average legroom (29 in)",
+                    "Carbon emissions estimate: 144 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 14:50"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 16:15"
+                  },
+                  "duration": 145,
+                  "airplane": "Airbus A320",
+                  "airline": "Jetstar",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+                  "travel_class": "Economy",
+                  "flight_number": "3K 519",
+                  "legroom": "29 in",
+                  "extensions": [
+                    "Below average legroom (29 in)",
+                    "Carbon emissions estimate: 128 kg"
+                  ]
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 70,
+                  "name": "Singapore Changi Airport",
+                  "id": "SIN"
+                }
+              ],
+              "total_duration": 380,
+              "carbon_emissions": {
+                "this_flight": 274000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 5
+              },
+              "price": 233,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3N6U3pJME5Id3pTelV4T1JvTENLcTFBUkFDR2dOVlUwUTRISENxdFFFPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIlNJTiIsbnVsbCwiM0siLCIyNDQiXSxbIlNJTiIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIjNLIiwiNTE5Il1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 16:55"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 20:05"
+                  },
+                  "duration": 250,
+                  "airplane": "Airbus A350",
+                  "airline": "THAI",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TG.png",
+                  "travel_class": "Economy",
+                  "flight_number": "TG 432",
+                  "legroom": "32 in",
+                  "extensions": [
+                    "Above average legroom (32 in)",
+                    "In-seat power & USB outlets",
+                    "On-demand video",
+                    "Carbon emissions estimate: 248 kg"
+                  ]
+                }
+              ],
+              "total_duration": 250,
+              "carbon_emissions": {
+                "this_flight": 249000,
+                "typical_for_this_route": 261000,
+                "difference_percent": -5
+              },
+              "price": 283,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TG.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ1ZVUnpRek1ob0xDSVRkQVJBQ0dnTlZVMFE0SEhDRTNRRT0iLFtbIkRQUyIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIlRHIiwiNDMyIl1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 19:00"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 22:10"
+                  },
+                  "duration": 250,
+                  "airplane": "Airbus A320",
+                  "airline": "THAI",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TG.png",
+                  "travel_class": "Economy",
+                  "flight_number": "TG 440",
+                  "legroom": "30 in",
+                  "extensions": [
+                    "Average legroom (30 in)",
+                    "Stream media to your device",
+                    "Carbon emissions estimate: 304 kg"
+                  ]
+                }
+              ],
+              "total_duration": 250,
+              "carbon_emissions": {
+                "this_flight": 305000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 17
+              },
+              "price": 283,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TG.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ1ZVUnpRME1Cb0xDSVRkQVJBQ0dnTlZVMFE0SEhDRTNRRT0iLFtbIkRQUyIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIlRHIiwiNDQwIl1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 12:55"
+                  },
+                  "arrival_airport": {
+                    "name": "Kuala Lumpur International Airport",
+                    "id": "KUL",
+                    "time": "2025-06-02 16:00"
+                  },
+                  "duration": 185,
+                  "airplane": "Airbus A330",
+                  "airline": "Malaysia Airlines",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/MH.png",
+                  "travel_class": "Economy",
+                  "flight_number": "MH 714",
+                  "legroom": "32 in",
+                  "extensions": [
+                    "Above average legroom (32 in)",
+                    "In-seat power & USB outlets",
+                    "On-demand video",
+                    "Carbon emissions estimate: 155 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Kuala Lumpur International Airport",
+                    "id": "KUL",
+                    "time": "2025-06-02 17:45"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 18:55"
+                  },
+                  "duration": 130,
+                  "airplane": "Boeing 737",
+                  "airline": "Malaysia Airlines",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/MH.png",
+                  "travel_class": "Economy",
+                  "flight_number": "MH 780",
+                  "legroom": "30 in",
+                  "extensions": [
+                    "Average legroom (30 in)",
+                    "In-seat USB outlet",
+                    "Stream media to your device",
+                    "Carbon emissions estimate: 118 kg"
+                  ],
+                  "often_delayed_by_over_30_min": true
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 105,
+                  "name": "Kuala Lumpur International Airport",
+                  "id": "KUL"
+                }
+              ],
+              "total_duration": 420,
+              "carbon_emissions": {
+                "this_flight": 275000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 5
+              },
+              "price": 299,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/MH.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3ROU0RjeE5IeE5TRGM0TUJvTENQTG9BUkFDR2dOVlUwUTRISER5NkFFPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIktVTCIsbnVsbCwiTUgiLCI3MTQiXSxbIktVTCIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIk1IIiwiNzgwIl1dXQ=="
+            }
+          ],
+          "other_flights": [
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 14:50"
+                  },
+                  "arrival_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 17:50"
+                  },
+                  "duration": 180,
+                  "airplane": "Airbus A320",
+                  "airline": "Jetstar",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+                  "travel_class": "Economy",
+                  "flight_number": "3K 242",
+                  "legroom": "29 in",
+                  "extensions": [
+                    "Below average legroom (29 in)",
+                    "Carbon emissions estimate: 144 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 19:15"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 20:40"
+                  },
+                  "duration": 145,
+                  "airplane": "Airbus A320",
+                  "airline": "Jetstar",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+                  "travel_class": "Economy",
+                  "flight_number": "3K 513",
+                  "legroom": "29 in",
+                  "extensions": [
+                    "Below average legroom (29 in)",
+                    "Carbon emissions estimate: 128 kg"
+                  ]
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 85,
+                  "name": "Singapore Changi Airport",
+                  "id": "SIN"
+                }
+              ],
+              "total_duration": 410,
+              "carbon_emissions": {
+                "this_flight": 274000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 5
+              },
+              "price": 254,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3N6U3pJME1ud3pTelV4TXhvTENPZkZBUkFDR2dOVlUwUTRISERueFFFPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIlNJTiIsbnVsbCwiM0siLCIyNDIiXSxbIlNJTiIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIjNLIiwiNTEzIl1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 10:55"
+                  },
+                  "arrival_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 13:40"
+                  },
+                  "duration": 165,
+                  "airplane": "Airbus A320",
+                  "airline": "Jetstar",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/3K.png",
+                  "travel_class": "Economy",
+                  "flight_number": "3K 244",
+                  "ticket_also_sold_by": [
+                    "Emirates"
+                  ],
+                  "legroom": "29 in",
+                  "extensions": [
+                    "Below average legroom (29 in)",
+                    "Carbon emissions estimate: 144 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 15:35"
+                  },
+                  "arrival_airport": {
+                    "name": "Phnom Penh International Airport",
+                    "id": "PNH",
+                    "time": "2025-06-02 16:35"
+                  },
+                  "duration": 120,
+                  "airplane": "Boeing 777",
+                  "airline": "Emirates",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/EK.png",
+                  "travel_class": "Economy",
+                  "flight_number": "EK 348",
+                  "legroom": "32 in",
+                  "extensions": [
+                    "Above average legroom (32 in)",
+                    "Wi-Fi for a fee",
+                    "In-seat power & USB outlets",
+                    "On-demand video",
+                    "Carbon emissions estimate: 104 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Phnom Penh International Airport",
+                    "id": "PNH",
+                    "time": "2025-06-02 19:25"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 20:40"
+                  },
+                  "duration": 75,
+                  "airplane": "Airbus A319",
+                  "airline": "Bangkok Airways",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/PG.png",
+                  "travel_class": "Economy",
+                  "flight_number": "PG 936",
+                  "ticket_also_sold_by": [
+                    "Emirates"
+                  ],
+                  "legroom": "30 in",
+                  "extensions": [
+                    "Average legroom (30 in)",
+                    "Carbon emissions estimate: 74 kg"
+                  ],
+                  "often_delayed_by_over_30_min": true
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 115,
+                  "name": "Singapore Changi Airport",
+                  "id": "SIN"
+                },
+                {
+                  "duration": 170,
+                  "name": "Phnom Penh International Airport",
+                  "id": "PNH"
+                }
+              ],
+              "total_duration": 645,
+              "carbon_emissions": {
+                "this_flight": 323000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 24
+              },
+              "price": 271,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/multi.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFaEV6U3pJME5IeEZTek0wT0h4UVJ6a3pOaG9MQ0tIVEFSQUNHZ05WVTBRNEhIQ2gwd0U9IixbWyJEUFMiLCIyMDI1LTA2LTAyIiwiU0lOIixudWxsLCIzSyIsIjI0NCJdLFsiU0lOIiwiMjAyNS0wNi0wMiIsIlBOSCIsbnVsbCwiRUsiLCIzNDgiXSxbIlBOSCIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIlBHIiwiOTM2Il1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 10:50"
+                  },
+                  "arrival_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 13:30"
+                  },
+                  "duration": 160,
+                  "airplane": "Boeing 787",
+                  "airline": "Scoot",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TR.png",
+                  "travel_class": "Economy",
+                  "flight_number": "TR 281",
+                  "legroom": "30 in",
+                  "extensions": [
+                    "Average legroom (30 in)",
+                    "Wi-Fi for a fee",
+                    "In-seat power outlet",
+                    "Carbon emissions estimate: 121 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 15:30"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 17:00"
+                  },
+                  "duration": 150,
+                  "airplane": "Boeing 787",
+                  "airline": "Scoot",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TR.png",
+                  "travel_class": "Economy",
+                  "flight_number": "TR 610",
+                  "legroom": "30 in",
+                  "extensions": [
+                    "Average legroom (30 in)",
+                    "Wi-Fi for a fee",
+                    "In-seat power outlet",
+                    "Carbon emissions estimate: 108 kg"
+                  ],
+                  "often_delayed_by_over_30_min": true
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 120,
+                  "name": "Singapore Changi Airport",
+                  "id": "SIN"
+                }
+              ],
+              "total_duration": 430,
+              "carbon_emissions": {
+                "this_flight": 230000,
+                "typical_for_this_route": 261000,
+                "difference_percent": -12
+              },
+              "price": 290,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/TR.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3RVVWpJNE1YeFVVall4TUJvTENLemlBUkFDR2dOVlUwUTRISENzNGdFPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIlNJTiIsbnVsbCwiVFIiLCIyODEiXSxbIlNJTiIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIlRSIiwiNjEwIl1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 07:00"
+                  },
+                  "arrival_airport": {
+                    "name": "Soekarno–Hatta International Airport",
+                    "id": "CGK",
+                    "time": "2025-06-02 08:00"
+                  },
+                  "duration": 120,
+                  "airplane": "Boeing 737",
+                  "airline": "Garuda Indonesia",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+                  "travel_class": "Economy",
+                  "flight_number": "GA 401",
+                  "legroom": "31 in",
+                  "extensions": [
+                    "Average legroom (31 in)",
+                    "On-demand video",
+                    "Carbon emissions estimate: 126 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Soekarno–Hatta International Airport",
+                    "id": "CGK",
+                    "time": "2025-06-02 09:40"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 13:10"
+                  },
+                  "duration": 210,
+                  "airplane": "Boeing 737",
+                  "airline": "Garuda Indonesia",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+                  "travel_class": "Economy",
+                  "flight_number": "GA 866",
+                  "legroom": "31 in",
+                  "extensions": [
+                    "Average legroom (31 in)",
+                    "On-demand video",
+                    "Carbon emissions estimate: 243 kg"
+                  ]
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 100,
+                  "name": "Soekarno–Hatta International Airport",
+                  "id": "CGK"
+                }
+              ],
+              "total_duration": 430,
+              "carbon_emissions": {
+                "this_flight": 370000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 42
+              },
+              "price": 409,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3RIUVRRd01YeEhRVGcyTmhvTENKRy9BaEFDR2dOVlUwUTRISENSdndJPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIkNHSyIsbnVsbCwiR0EiLCI0MDEiXSxbIkNHSyIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIkdBIiwiODY2Il1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 12:00"
+                  },
+                  "arrival_airport": {
+                    "name": "Soekarno–Hatta International Airport",
+                    "id": "CGK",
+                    "time": "2025-06-02 12:55"
+                  },
+                  "duration": 115,
+                  "airplane": "Boeing 737",
+                  "airline": "Garuda Indonesia",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+                  "travel_class": "Economy",
+                  "flight_number": "GA 407",
+                  "legroom": "31 in",
+                  "extensions": [
+                    "Average legroom (31 in)",
+                    "On-demand video",
+                    "Carbon emissions estimate: 126 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Soekarno–Hatta International Airport",
+                    "id": "CGK",
+                    "time": "2025-06-02 15:55"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 19:30"
+                  },
+                  "duration": 215,
+                  "airplane": "Boeing 737",
+                  "airline": "Garuda Indonesia",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+                  "travel_class": "Economy",
+                  "flight_number": "GA 868",
+                  "legroom": "31 in",
+                  "extensions": [
+                    "Average legroom (31 in)",
+                    "On-demand video",
+                    "Carbon emissions estimate: 243 kg"
+                  ]
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 180,
+                  "name": "Soekarno–Hatta International Airport",
+                  "id": "CGK"
+                }
+              ],
+              "total_duration": 510,
+              "carbon_emissions": {
+                "this_flight": 370000,
+                "typical_for_this_route": 261000,
+                "difference_percent": 42
+              },
+              "price": 461,
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GA.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3RIUVRRd04zeEhRVGcyT0JvTENMYm5BaEFDR2dOVlUwUTRISEMyNXdJPSIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIkNHSyIsbnVsbCwiR0EiLCI0MDciXSxbIkNHSyIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIkdBIiwiODY4Il1dXQ=="
+            },
+            {
+              "flights": [
+                {
+                  "departure_airport": {
+                    "name": "I Gusti Ngurah Rai International Airport",
+                    "id": "DPS",
+                    "time": "2025-06-02 12:10"
+                  },
+                  "arrival_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 14:55"
+                  },
+                  "duration": 165,
+                  "airplane": "Boeing 787",
+                  "airline": "Singapore Airlines",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/SQ.png",
+                  "travel_class": "Economy",
+                  "flight_number": "SQ 937",
+                  "legroom": "32 in",
+                  "extensions": [
+                    "Above average legroom (32 in)",
+                    "Free Wi-Fi",
+                    "In-seat power & USB outlets",
+                    "On-demand video",
+                    "Carbon emissions estimate: 101 kg"
+                  ]
+                },
+                {
+                  "departure_airport": {
+                    "name": "Singapore Changi Airport",
+                    "id": "SIN",
+                    "time": "2025-06-02 16:00"
+                  },
+                  "arrival_airport": {
+                    "name": "Suvarnabhumi Airport",
+                    "id": "BKK",
+                    "time": "2025-06-02 17:25"
+                  },
+                  "duration": 145,
+                  "airplane": "Boeing 787",
+                  "airline": "Singapore Airlines",
+                  "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/SQ.png",
+                  "travel_class": "Economy",
+                  "flight_number": "SQ 712",
+                  "legroom": "32 in",
+                  "extensions": [
+                    "Above average legroom (32 in)",
+                    "Free Wi-Fi",
+                    "In-seat power & USB outlets",
+                    "On-demand video",
+                    "Carbon emissions estimate: 90 kg"
+                  ]
+                }
+              ],
+              "layovers": [
+                {
+                  "duration": 65,
+                  "name": "Singapore Changi Airport",
+                  "id": "SIN"
+                }
+              ],
+              "total_duration": 375,
+              "carbon_emissions": {
+                "this_flight": 192000,
+                "typical_for_this_route": 261000,
+                "difference_percent": -26
+              },
+              "type": "One way",
+              "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/SQ.png",
+              "booking_token": "WyJDalJJVkRSVUxVRjZRbkp3V205QlIwRkhja0ZDUnkwdExTMHRMUzB0TFhscFltcDVPVUZCUVVGQlIyY3dUVU4zUkVkVU9VdEJFZ3RUVVRrek4zeFRVVGN4TWpnYyIsW1siRFBTIiwiMjAyNS0wNi0wMiIsIlNJTiIsbnVsbCwiU1EiLCI5MzciXSxbIlNJTiIsIjIwMjUtMDYtMDIiLCJCS0siLG51bGwsIlNRIiwiNzEyIl1dXQ=="
+            }
+          ],
+          "airports": [
+            {
+              "departure": [
+                {
+                  "airport": {
+                    "id": "DPS",
+                    "name": "I Gusti Ngurah Rai International Airport"
+                  },
+                  "city": "Denpasar",
+                  "country": "Indonesia",
+                  "country_code": "ID",
+                  "image": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSpjCo287YKiDxrbQlSm3Af70o71dUjCPZ6_dVDyf-1TqPjvjrZ37t33Q_7iDHhYS48wNu0LJdENRBRSg",
+                  "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQFsxUxjHvh4B-OC3MBZsppnugcvv5-mwb1QyUnDEw4ERAN8pQGYpPooKz04neOm3ivuxDBxp0nyrI4S_UEFevemYjK9tdUmJgtUDr1HgQ"
+                }
+              ],
+              "arrival": [
+                {
+                  "airport": {
+                    "id": "BKK",
+                    "name": "Suvarnabhumi Airport"
+                  },
+                  "city": "Bangkok",
+                  "country": "Thailand",
+                  "country_code": "TH",
+                  "image": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTzC4xB5QxGqhLwOS5u7E8q-Ty8lX8lihfxKD-L1VCamrWDhR52VWvoBnPWydRUr7FEKiKwHfAU0sB9mg",
+                  "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcS-yAxs8ZWNi0M14W-4wO0ra1auEIiVtG0zy-C8CygMmIa2-MVy7L8vSTHNXJJnS_9lq_gL3BVaF6MQh6wBKzXzqexb7CZL29F6UQABXAY"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "SerpAPI Google Flights": {
+      "main": [
+        [
+          {
+            "node": "Split Out Best Flights",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out Other Flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Booking Options": {
+      "main": [
+        [
+          {
+            "node": "Get Flights with Booking URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Flights with Booking URL": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Flights - Booking Options",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Best Flights": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Other Flights": {
+      "main": [
+        [
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Query Metadata",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser1": {
+      "ai_outputParser": [
+        []
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Query Metadata": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Fields": {
+      "main": [
+        [
+          {
+            "node": "Generate Query Metadata1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4o1": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "4o2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2.5 Flash Preview 05-20 - 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Review & Format",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review & Format": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Clean Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Review & Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 - 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Query Metadata",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 mini - 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Query Metadata1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Query Metadata1": {
+      "main": [
+        [
+          {
+            "node": "Clean Flights Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Flights Data": {
+      "main": [
+        [
+          {
+            "node": "Route Based on Flight Type",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge -",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Limit2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Split Out Best Flights1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Other Flights1": {
+      "main": [
+        [
+          {
+            "node": "Limit2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Flights with Booking URL1": {
+      "main": [
+        [
+          {
+            "node": "Limit3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit3": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2.5 Flash Preview 05-20 - ": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Review & Format1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review & Format1": {
+      "main": [
+        [
+          {
+            "node": "Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Review & Format1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Flights - Booking Options - Round Trip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SerpAPI Google Flights - Booking Options - One Way",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SerpAPI Google Flights - Booking Options - Multi City",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Round Trip": {
+      "main": [
+        [
+          {
+            "node": "Merge -",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - One Way": {
+      "main": [
+        [
+          {
+            "node": "Merge -",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Multi City": {
+      "main": [
+        [
+          {
+            "node": "Merge -",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Get Flights with Booking URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Booking Options - Round Trip": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Booking Options - One Way": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Google Flights - Booking Options - Multi City": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Based on Flight Type": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI Google Flights - Round Trip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SerpAPI Google Flights - One Way",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SerpAPI Google Flights - Multi City",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge -": {
+      "main": [
+        [
+          {
+            "node": "Split Out Best Flights1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out Other Flights1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e092e95-be84-478d-86c0-2daca4b56f80",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32159554ee0146b7497a358eac8b071709b32ad6ac298a97c0f5249ac9d9fa0a"
+  },
+  "id": "wYkJ4nMiadT14YME",
+  "tags": []
+}
